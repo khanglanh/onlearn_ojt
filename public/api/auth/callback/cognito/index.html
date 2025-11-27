@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cognito Callback (API path)</title>
+  </head>
+  <body>
+    <script>
+      (function() {
+        function parseQuery(qs) {
+          const params = {};
+          const parts = qs.replace(/^\?/, '').split('&').filter(Boolean);
+          for (const part of parts) {
+            const [k,v] = part.split('=');
+            params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+          }
+          return params;
+        }
+
+        const params = parseQuery(window.location.search || '');
+        const payload = {
+          type: 'cognito_callback',
+          code: params.code || null,
+          state: params.state || null,
+          error: params.error || null,
+          error_description: params.error_description || null,
+          raw: params
+        };
+        try {
+        try {
+          let opener = window.opener;
+          let isClosed = false;
+          try {
+            isClosed = opener.closed;
+          } catch (e) {
+            // If COOP blocks access, we might not be able to read .closed
+            // But if we can't read it, we probably can't postMessage either,
+            // unless the origin matches.
+            console.warn('Could not check window.opener.closed', e);
+          }
+
+          if (opener && !isClosed) {
+            opener.postMessage(payload, window.location.origin);
+          } else {
+            try { localStorage.setItem('cognito_callback', JSON.stringify(payload)); } catch(e){}
+          }
+        } catch (e) {
+          console.error('cognito callback postMessage failed', e);
+        }
+        } catch (e) {
+          console.error('cognito callback postMessage failed', e);
+        }
+
+        setTimeout(() => {
+          try { window.close(); } catch(e) {}
+        }, 500);
+      })();
+    </script>
+    <p>Signing in... you can close this window.</p>
+  </body>
+  </html>

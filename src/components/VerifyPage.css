@@ -1,0 +1,57 @@
+@import "./AuthShared.css";
+
+/* Verify-specific overrides */
+
+
+.hint {
+  font-size: 12px;
+  color: #777;
+  margin-top: 6px;
+}
+
+.login-box .actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.support-link {
+  color: #115dc1;
+  text-decoration: none;
+  font-weight: 600;
+  align-self: center;
+}
+
+.login-box .actions .signin-btn + .support-link {
+  margin-left: 8px;
+  text-decoration: underline;
+}
+
+/* --- PHẦN ĐÃ CHỈNH SỬA (FIX LỖI LỆCH KHUNG) --- */
+
+.resend-card {
+  /* Đặt width 100% để khung này rộng bằng form phía trên */
+  width: 100%;
+  
+  /* Chỉ giữ khoảng cách phía trên, bỏ margin-left gây lệch */
+  margin: 18px 0 0 0;
+  
+  /* Tùy chọn giao diện: Có thể giữ hoặc bỏ background/shadow nếu muốn */
+  background: #fff;
+  /* box-shadow: 0 8px 24px rgba(0,0,0,0.08); */ /* Tạm comment shadow để nhìn clean hơn */
+  
+  border-radius: 12px;
+  padding: 10px 0;
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.resend-card .actions {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Đã xóa đoạn @media query gây lỗi lệch sang phải ở màn hình lớn */

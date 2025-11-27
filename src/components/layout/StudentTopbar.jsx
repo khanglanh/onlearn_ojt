@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaBell, FaExpand } from "react-icons/fa";
 import avatar from "../../assets/khanhly.png";
 import flagVN from "../../assets/vn-flag.png";
-import { logoutFake } from "../../api/auth.js";
+import { logout } from "../../api/auth.js";
 import { useNavigate } from "react-router-dom";
 
 export default function Topbar() {
@@ -11,7 +11,7 @@ export default function Topbar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logoutFake();
+    logout();
     navigate("/login");
   };
 
@@ -106,6 +106,40 @@ export default function Topbar() {
               zIndex: 100,
             }}
           >
+            <button
+              onClick={() => navigate('/settings/profile')}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "transparent",
+                border: "none",
+                textAlign: "left",
+                paddingLeft: "16px",
+                color: "#05386D",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Hồ sơ
+            </button>
+
+            <button
+              onClick={() => navigate('/settings/change-password')}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "transparent",
+                border: "none",
+                textAlign: "left",
+                paddingLeft: "16px",
+                color: "#05386D",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Đổi mật khẩu
+            </button>
+
             <button
               onClick={handleLogout}
               style={{
