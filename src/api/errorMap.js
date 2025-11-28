@@ -63,6 +63,13 @@ const MAP = [
     message: 'Email is already verified — proceed to sign in.',
     action: 'signin',
   },
+  {
+    // Google login restriction - user not registered in system
+    pattern: /access denied.*not registered|email is not registered in the system/i,
+    code: 'USER_NOT_REGISTERED',
+    message: 'Access denied. This email is not registered in the system. Please contact your administrator to get access.',
+    action: 'contact_admin',
+  },
 ];
 
 export function mapError(raw) {

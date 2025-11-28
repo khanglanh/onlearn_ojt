@@ -9,6 +9,10 @@ export async function openCognitoPopup({
   clientId,
   redirectUri,
   scope = "openid profile email",
+  // PKCE + session/prompt behavior: 'prompt' can be 'login', 'consent', 'select_account'
+  // For Google specifically 'select_account' will force the account chooser.
+  // Default to select_account to show account chooser each time.
+  prompt = 'select_account',
   onSuccess,
   onError,
   popupOptions = "width=500,height=600"
@@ -37,6 +41,7 @@ export async function openCognitoPopup({
     `&scope=${encodeURIComponent(scope)}` +
     `&code_challenge_method=S256&code_challenge=${encodeURIComponent(codeChallenge)}` +
     `&state=${encodeURIComponent(state)}` +
+    `&prompt=${encodeURIComponent(prompt)}` +
     `&identity_provider=Google`;
 
   console.debug('[useCognitoPopup] authorizeUrl =', authorizeUrl);
@@ -67,6 +72,7 @@ export async function openCognitoPopup({
       // For security validate origin if you know the exact origin
       // if (e.origin !== window.location.origin) return;
       const msg = e.data || {};
+      console.debug('[useCognitoPopup] message received', msg);
       if (msg.type !== 'cognito_callback') return;
 
       const { code, state: returnedState, error, error_description } = msg;
@@ -74,6 +80,7 @@ export async function openCognitoPopup({
         // Message not for this request instance; ignore it.
         return;
       }
+      console.debug('[useCognitoPopup] state match', { expected: state, returned: returnedState });
       if (error) {
         const errText = `${error}${error_description ? ' - ' + error_description : ''}`;
         const err = new Error(errText);
@@ -91,6 +98,18 @@ export async function openCognitoPopup({
         return reject(err);
       }
 
+      // Debugging: print the values used in the token exchange
+      try {
+        console.debug('[useCognitoPopup] token exchange values:', {
+          tokenUrl: `${cognitoDomain.replace(/\/$/, "")}/oauth2/token`,
+          clientId,
+          redirectUri,
+          code,
+          verifier: verifier && `${verifier.slice ? verifier.slice(0, 32) : verifier}` // don't log full verifier
+        });
+      } catch (ex) {
+        console.warn('[useCognitoPopup] debug logging failed', ex);
+      }
       try {
         const tokenUrl = `${cognitoDomain.replace(/\/$/, "")}/oauth2/token`;
         const body = new URLSearchParams();
@@ -108,7 +127,22 @@ export async function openCognitoPopup({
 
         if (!resp.ok) {
           const text = await resp.text();
-          throw new Error(`Token endpoint error: ${resp.status} ${text}`);
+          // try to include more context in the error
+          const errText = `Token endpoint error: ${resp.status} ${text} - code: ${code} - verifier_present: ${!!verifier}`;
+          console.error('[useCognitoPopup] token endpoint returned non-ok', { status: resp.status, text, code, verifierPresent: !!verifier });
+          
+          // Store error info để LoginPage có thể handle retry
+          try {
+            sessionStorage.setItem('cognito_login_error', text);
+            // Check if this is a PreTokenGeneration error (user not in system)
+            if (text.includes('PreTokenGeneration') || text.includes('Access denied') || text.includes('not registered')) {
+              sessionStorage.setItem('cognito_login_failed_auth', 'true');
+            }
+          } catch (e) {
+            console.warn('[useCognitoPopup] could not store error flag', e);
+          }
+          
+          throw new Error(errText);
         }
 
         const tokens = await resp.json();

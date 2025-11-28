@@ -21,6 +21,34 @@ function LoginPage() {
     }
   }, [navigate]);
 
+  // Auto-retry Google login sau khi logout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const retryGoogle = params.get('retry_google');
+    
+    if (retryGoogle === '1') {
+      // Clear URL param
+      window.history.replaceState({}, '', '/login');
+      
+      // Clear any lingering error flags
+      try {
+        sessionStorage.removeItem('cognito_login_error');
+        sessionStorage.removeItem('cognito_login_failed_auth');
+      } catch (e) {
+        console.warn('Could not clear flags', e);
+      }
+      
+      // Auto-trigger Google login sau một chút delay
+      console.log('[LoginPage] Auto-retrying Google login after logout');
+      const timer = setTimeout(() => {
+        handleGoogleSignIn();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleFakeLogin = () => {
     loginFake(); // Lưu trạng thái đăng nhập giả
     navigate("/dashboard"); // Chuyển trang
@@ -33,6 +61,7 @@ function LoginPage() {
   const [info, setInfo] = useState("");
   const [showResend, setShowResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [googleLoginFailed, setGoogleLoginFailed] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -87,6 +116,30 @@ function LoginPage() {
     }
   };
 
+  const handleLogoutAndRetry = () => {
+    // Clear error states
+    setGoogleLoginFailed(false);
+    setError('');
+    
+    // Clear session storage flags
+    try {
+      sessionStorage.removeItem('cognito_login_error');
+      sessionStorage.removeItem('cognito_login_failed_auth');
+    } catch (e) {
+      console.warn('Could not clear session flags', e);
+    }
+    
+    // Redirect to Cognito logout endpoint to clear any cached sessions
+    // Then auto-trigger login again via retry_google param
+    const COGNITO_DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN;
+    const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID;
+    const LOGOUT_URI = `${window.location.origin}/login?retry_google=1`;
+    const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${encodeURIComponent(CLIENT_ID)}&logout_uri=${encodeURIComponent(LOGOUT_URI)}`;
+    
+    console.log('[LoginPage] Redirecting to logout then retry:', logoutUrl);
+    window.location.href = logoutUrl;
+  };
+
   const handleGoogleSignIn = async () => {
     const COGNITO_DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN; // default dev domain
     const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID; // replace
@@ -107,6 +160,9 @@ function LoginPage() {
         cognitoDomain: COGNITO_DOMAIN,
         clientId: CLIENT_ID,
         redirectUri: REDIRECT_URI,
+        // Force the Google account chooser so the user can select a desktop/mobile account
+        // if they have multiple Google accounts logged in in the browser.
+        prompt: 'select_account',
         onSuccess: (tokens) => {
           // tokens contains id_token, access_token, refresh_token (if enabled), expires_in
           setSession(tokens);
@@ -131,7 +187,13 @@ function LoginPage() {
             msg += '\n\n[Dev Hint] This error usually means the Cognito User Pool has the "email" attribute set to Immutable, but the Google Identity Provider is trying to map/update it. You must recreate the User Pool with "email" set to Mutable: true.';
           }
 
-          setError(msg);
+          // Check nếu là PreTokenGeneration error - user không có trong system
+          if (msg.includes('PreTokenGeneration') || msg.includes('Access denied') || msg.includes('not registered')) {
+            setGoogleLoginFailed(true);
+            setError('This Google account is not registered in the system. Please contact your administrator or try another Google account.');
+          } else {
+            setError(msg);
+          }
         }
       });
     } catch (err) {
@@ -194,6 +256,35 @@ function LoginPage() {
             />
             Sign in with Google
           </button>
+          
+          {googleLoginFailed && (
+            <button 
+              className="google-btn" 
+              type="button" 
+              onClick={() => {
+                setGoogleLoginFailed(false);
+                setError('');
+                // Force logout from Google by redirecting to Cognito logout first
+                // Add retry_google=1 to trigger auto-login after logout
+                const COGNITO_DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN;
+                const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID;
+                const LOGOUT_URI = `${window.location.origin}/login?retry_google=1`;
+                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${encodeURIComponent(CLIENT_ID)}&logout_uri=${encodeURIComponent(LOGOUT_URI)}`;
+                window.location.href = logoutUrl;
+              }}
+              style={{ 
+                marginTop: '10px', 
+                backgroundColor: '#f44336',
+                borderColor: '#f44336'
+              }}
+            >
+              <img
+                src="https://www.svgrepo.com/show/355037/google.svg"
+                alt="Google logo"
+              />
+              Try Another Google Account
+            </button>
+          )}
 
           <div className="divider">OR</div>
 

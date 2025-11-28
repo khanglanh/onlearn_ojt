@@ -189,6 +189,15 @@ export default function ImportPage() {
                 <li>Must contain 5 sheets: Students, Teachers, Courses, Classes, Enrollments</li>
                 <li>See <a href="/import-template.xlsx" download>template file</a> for structure</li>
               </ul>
+              
+              <h3>Import Behavior:</h3>
+              <ul>
+                <li><strong>Idempotent:</strong> Importing the same file multiple times is safe</li>
+                <li><strong>Students/Teachers/Courses:</strong> If record exists → UPDATE, else → INSERT</li>
+                <li><strong>Classes:</strong> If class exists (same course + name) → UPDATE, else → INSERT</li>
+                <li><strong>Enrollments:</strong> If enrollment exists → SKIP, else → INSERT</li>
+                <li>No duplicates will be created</li>
+              </ul>
             </div>
 
             {!uploading && !jobStatus && (
@@ -266,11 +275,11 @@ export default function ImportPage() {
                         <div className="summary">
                           <h4>Summary:</h4>
                           <ul>
-                            <li>Students: {jobStatus.summary.studentsImported || 0}</li>
-                            <li>Teachers: {jobStatus.summary.teachersImported || 0}</li>
-                            <li>Courses: {jobStatus.summary.coursesImported || 0}</li>
-                            <li>Classes: {jobStatus.summary.classesImported || 0}</li>
-                            <li>Enrollments: {jobStatus.summary.enrollmentsCreated || 0}</li>
+                            <li>Students: {jobStatus.summary.students || 0}</li>
+                            <li>Teachers: {jobStatus.summary.teachers || 0}</li>
+                            <li>Courses: {jobStatus.summary.courses || 0}</li>
+                            <li>Classes: {jobStatus.summary.classes || 0}</li>
+                            <li>Enrollments: {jobStatus.summary.enrollments || 0}</li>
                           </ul>
                         </div>
                       )}

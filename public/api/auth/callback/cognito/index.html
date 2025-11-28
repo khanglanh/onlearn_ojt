@@ -40,7 +40,20 @@
           }
 
           if (opener && !isClosed) {
-            opener.postMessage(payload, window.location.origin);
+            // Try to post message to the opener using the opener's origin if available.
+            // This is safer than using window.location.origin which may differ in some proxy setups.
+            let targetOrigin = window.location.origin;
+            try {
+              if (opener && opener.location && opener.location.origin) targetOrigin = opener.location.origin;
+            } catch (e) {
+              // Accessing opener.location may throw if cross-origin; fall back to window.location.origin
+            }
+            try {
+              opener.postMessage(payload, targetOrigin);
+            } catch (e) {
+              // If that fails, try a last-resort '*' to ensure delivery for debugging.
+              try { opener.postMessage(payload, '*'); } catch (ex) { throw ex; }
+            }
           } else {
             try { localStorage.setItem('cognito_callback', JSON.stringify(payload)); } catch(e){}
           }

@@ -65,10 +65,14 @@
 }
 
 .file-requirements h3 {
-  margin-top: 0;
+  margin-top: 1rem;
   margin-bottom: 0.5rem;
   color: #2d3748;
   font-size: 1rem;
+}
+
+.file-requirements h3:first-child {
+  margin-top: 0;
 }
 
 .file-requirements ul {
@@ -79,6 +83,12 @@
 .file-requirements li {
   margin-bottom: 0.5rem;
   color: #4a5568;
+  line-height: 1.5;
+}
+
+.file-requirements li strong {
+  color: #2d3748;
+  font-weight: 600;
 }
 
 .file-requirements a {
