@@ -83,6 +83,16 @@ export const updateStudent = async (studentId, studentData) => {
 };
 
 /**
+ * Delete a student
+ * @param {string} studentId - Student ID
+ * @returns {Promise} API response
+ */
+export const deleteStudent = async (studentId) => {
+  const response = await api.delete(buildStudentUrl(`students/${studentId}`));
+  return response.data;
+};
+
+/**
  * Update student status
  * @param {string} studentId - Student ID
  * @param {Object} statusData - Status update data

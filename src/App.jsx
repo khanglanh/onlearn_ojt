@@ -90,7 +90,7 @@ function App() {
         <Route
           path="/students"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['ADMIN']}>
               <StudentsPage />
             </ProtectedRoute>
           }
@@ -98,7 +98,7 @@ function App() {
         <Route
           path="/students/:studentId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['ADMIN']}>
               <StudentDetailPage />
             </ProtectedRoute>
           }
@@ -106,7 +106,7 @@ function App() {
         <Route
           path="/teachers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
               <TeachersPage />
             </ProtectedRoute>
           }
