@@ -31,19 +31,24 @@
 
 /* Header */
 .dashboard-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
 }
 
 .dashboard-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: white;
   margin-bottom: 0.5rem;
 }
 
 .dashboard-header .subtitle {
   font-size: 1rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
 }
 
@@ -56,48 +61,42 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: white;
+  color: #1a202c;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   gap: 1rem;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.stat-card:nth-child(1) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stat-card:nth-child(4) {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-card:nth-child(5) {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
 .stat-card.clickable {
   cursor: pointer;
 }
 
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .stat-card.clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
   font-size: 2.5rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7fafc;
+  border-radius: 12px;
+  flex-shrink: 0;
+  border: 2px solid #e2e8f0;
 }
 
 .stat-content {
@@ -105,14 +104,16 @@
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
+  color: #3182ce;
   margin-bottom: 0.25rem;
+  line-height: 1;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  opacity: 0.95;
+  color: #718096;
   font-weight: 500;
 }
 

@@ -25,10 +25,17 @@ import ImportPage from "./components/pages/ImportPage";
 import TeacherDashboardPage from "./components/pages/TeacherDashboardPage";
 import TeacherCoursePage from "./components/pages/TeacherCoursePage";
 import TeacherClassPage from "./components/pages/TeacherClassPage";
+import TeacherClassesPage from "./components/pages/TeacherClassesPage";
+import TeacherSchedulePage from "./components/pages/TeacherSchedulePage";
+import TeacherStudentsPage from "./components/pages/TeacherStudentsPage";
+import TeacherAttendancePage from "./components/pages/TeacherAttendancePage";
+import TeacherGradesPage from "./components/pages/TeacherGradesPage";
+import TeacherStatisticsPage from "./components/pages/TeacherStatisticsPage";
 import TeacherMaterialsPage from "./components/TeacherMaterialsPage";
 import StudentSearchPage from "./components/pages/StudentSearchPage";
 import StudentCoursesPage from "./components/pages/StudentCoursesPage";
 import StudentMaterialsPage from "./components/StudentMaterialsPage";
+import StudentDashboardPage from "./components/pages/StudentDashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Helper component to redirect to role-specific dashboard
@@ -194,10 +201,10 @@ function App() {
           }
         />
         <Route
-          path="/teacher/courses/:courseId"
+          path="/teacher/classes"
           element={
             <ProtectedRoute allowedRoles={['TEACHER']}>
-              <TeacherCoursePage />
+              <TeacherClassesPage />
             </ProtectedRoute>
           }
         />
@@ -206,6 +213,54 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['TEACHER']}>
               <TeacherClassPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/schedule"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherSchedulePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/students"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherStudentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/attendance"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherAttendancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/grades"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherGradesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/statistics"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherStatisticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentDashboardPage />
             </ProtectedRoute>
           }
         />
@@ -225,13 +280,37 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/student/courses/:courseId"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentCoursesPage />
+            </ProtectedRoute>
+          }
+        />
         
         {/* Phase 3: Materials Routes */}
+        <Route
+          path="/teacher/materials"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherMaterialsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/teacher/materials/:courseId/:classId"
           element={
             <ProtectedRoute allowedRoles={['TEACHER']}>
               <TeacherMaterialsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/materials"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentMaterialsPage />
             </ProtectedRoute>
           }
         />

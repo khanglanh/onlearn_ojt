@@ -42,10 +42,18 @@ export default function EnrollmentsPage() {
         listCourses()
       ]);
 
+      // if (enrollmentsRes.success) {
+      //   setEnrollments(enrollmentsRes.data.enrollments || []);
+      // }
       if (enrollmentsRes.success) {
-        setEnrollments(enrollmentsRes.data.enrollments || []);
+        const enrollmentsData = enrollmentsRes.data;
+        if (Array.isArray(enrollmentsData)) {
+          setEnrollments(enrollmentsData);
+        } else {
+          setEnrollments(enrollmentsData?.enrollments || []);
+        }
       }
-
+      
       if (studentsRes.data?.students) {
         setStudents(studentsRes.data.students);
       }
