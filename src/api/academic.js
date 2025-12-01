@@ -205,6 +205,29 @@ export async function unenrollFromClass(enrollmentId) {
   return await response.json();
 }
 
+// Tạo đăng ký lịch học (ADMIN)
+export async function createEnrollmentSchedule(payload) {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(
+    `${API_BASE_URL}/academic/enrollments/schedules`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || "Failed to create enrollment schedule");
+  }
+
+  return await response.json();
+}
+
+
+
 // ==================== Teacher APIs ====================
 
 export async function getTeacherCourses(teacherId) {
