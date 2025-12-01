@@ -4,6 +4,7 @@ import StudentLayout from "../layout/StudentLayout";
 import { adminInvite } from "../../api/identityApi";
 import { academicApi } from "../../api/academic";
 import { parseApiError } from "../../api/parseApiError";
+import { hasRole } from "../../utils/authUtils";
 import './TeachersPage.css';
 import {
   FaSearch,
@@ -19,6 +20,9 @@ import {
   FaSortUp,
   FaSortDown,
   FaChalkboardTeacher,
+  FaPlus,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 
 export default function TeachersPage() {
@@ -41,11 +45,31 @@ export default function TeachersPage() {
   const [inviteSuccess, setInviteSuccess] = useState(null);
   const [inviteEmail, setInviteEmail] = useState("");
 
+  // Create/Edit modal state
+  const [teacherModalOpen, setTeacherModalOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [formData, setFormData] = useState({
+    email: "",
+    name: "",
+    phoneNumber: "",
+    teacherCode: "",
+    specialization: "",
+    department: "",
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  // Delete confirm state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
-  // Mock data for teachers
+  const isAdmin = hasRole("ADMIN");
+
   useEffect(() => {
     loadTeachers();
   }, []);
@@ -60,7 +84,6 @@ export default function TeachersPage() {
       console.log('[TeachersPage] Response received:', response);
       
       if (response.success && response.data) {
-        // Handle both array and object responses
         const teachersData = Array.isArray(response.data) ? response.data : 
                             response.data.teachers || [];
         console.log('[TeachersPage] Teachers data:', teachersData);
@@ -71,7 +94,6 @@ export default function TeachersPage() {
     } catch (err) {
       console.error("[TeachersPage] Error loading teachers:", err);
       
-      // Provide more specific error messages
       let errorMessage = 'Không thể tải danh sách giảng viên';
       
       if (err.message.includes('Failed to fetch')) {
@@ -91,6 +113,104 @@ export default function TeachersPage() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Create/Edit handlers
+  const openCreateModal = () => {
+    setEditingTeacher(null);
+    setFormData({
+      email: "",
+      name: "",
+      phoneNumber: "",
+      teacherCode: "",
+      specialization: "",
+      department: "",
+    });
+    setFormError(null);
+    setTeacherModalOpen(true);
+  };
+
+  const openEditModal = (teacher) => {
+    setEditingTeacher(teacher);
+    setFormData({
+      email: teacher.email || "",
+      name: teacher.name || "",
+      phoneNumber: teacher.phoneNumber || "",
+      teacherCode: teacher.teacherCode || "",
+      specialization: teacher.specialization || "",
+      department: teacher.department || "",
+    });
+    setFormError(null);
+    setTeacherModalOpen(true);
+  };
+
+  const closeTeacherModal = () => {
+    setTeacherModalOpen(false);
+    setEditingTeacher(null);
+    setFormData({
+      email: "",
+      name: "",
+      phoneNumber: "",
+      teacherCode: "",
+      specialization: "",
+      department: "",
+    });
+    setFormError(null);
+  };
+
+  const handleSubmitTeacher = async () => {
+    if (!formData.email || !formData.name) {
+      setFormError("Email và tên là bắt buộc");
+      return;
+    }
+
+    setFormLoading(true);
+    setFormError(null);
+
+    try {
+      if (editingTeacher) {
+        // Update
+        await academicApi.updateTeacher(editingTeacher.teacherId, formData);
+      } else {
+        // Create
+        await academicApi.createTeacher(formData);
+      }
+      
+      closeTeacherModal();
+      loadTeachers();
+    } catch (err) {
+      const parsed = parseApiError(err);
+      setFormError(parsed?.message || String(parsed) || "Lỗi khi lưu giảng viên");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Delete handlers
+  const openDeleteConfirm = (teacher) => {
+    setTeacherToDelete(teacher);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setTeacherToDelete(null);
+  };
+
+  const handleDeleteTeacher = async () => {
+    if (!teacherToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await academicApi.deleteTeacher(teacherToDelete.teacherId);
+      closeDeleteConfirm();
+      loadTeachers();
+    } catch (err) {
+      const parsed = parseApiError(err);
+      alert(parsed?.message || String(parsed) || "Lỗi khi xóa giảng viên");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -138,7 +258,11 @@ export default function TeachersPage() {
     }
   };
 
-  const handleRowClick = (teacherId) => {
+  const handleRowClick = (teacherId, e) => {
+    // Don't navigate if clicking on action buttons
+    if (e.target.closest('.action-buttons')) {
+      return;
+    }
     navigate(`/teachers/${teacherId}`);
   };
 
@@ -262,10 +386,18 @@ export default function TeachersPage() {
               className="search-input"
             />
 
-            <button onClick={openInviteModal} className="btn-primary">
-              <FaEnvelope />
-              Thêm giảng viên
-            </button>
+            <div style={{ display: "flex", gap: "10px" }}>
+              {isAdmin && (
+                <button onClick={openCreateModal} className="btn-primary">
+                  <FaPlus />
+                  Tạo mới
+                </button>
+              )}
+              <button onClick={openInviteModal} className="btn-primary">
+                <FaEnvelope />
+                Mời giảng viên
+              </button>
+            </div>
           </div>
         </div>
 
@@ -501,13 +633,27 @@ export default function TeachersPage() {
                       {sortBy !== "createdAt" && <FaSort style={{ opacity: 0.3 }} />}
                     </div>
                   </th>
+                  {isAdmin && (
+                    <th
+                      style={{
+                        padding: "15px",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Thao tác
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredTeachers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan={isAdmin ? "7" : "6"}
                       style={{
                         padding: "40px",
                         textAlign: "center",
@@ -524,7 +670,7 @@ export default function TeachersPage() {
                   paginatedTeachers.map((teacher) => (
                     <tr
                       key={teacher.teacherId}
-                      onClick={() => handleRowClick(teacher.teacherId)}
+                      onClick={(e) => handleRowClick(teacher.teacherId, e)}
                       style={{
                         borderTop: "1px solid #F3F4F6",
                         cursor: "pointer",
@@ -617,6 +763,54 @@ export default function TeachersPage() {
                             )
                           : "—"}
                       </td>
+                      {isAdmin && (
+                        <td style={{ padding: "15px" }}>
+                          <div className="action-buttons" style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(teacher);
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#E0E7FF",
+                                color: "#6366F1",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                              title="Chỉnh sửa"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteConfirm(teacher);
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#FEE2E2",
+                                color: "#EF4444",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                              title="Xóa"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -680,6 +874,287 @@ export default function TeachersPage() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Create/Edit Teacher Modal */}
+        {teacherModalOpen && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+            onClick={closeTeacherModal}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "30px",
+                maxWidth: "600px",
+                width: "90%",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "20px", color: "#05386D", fontSize: "24px" }}>
+                {editingTeacher ? "Chỉnh sửa giảng viên" : "Tạo giảng viên mới"}
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Email <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={!!editingTeacher}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      backgroundColor: editingTeacher ? "#F3F4F6" : "#fff",
+                    }}
+                    placeholder="teacher@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Tên <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="Nguyễn Văn A"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Số điện thoại
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="+84123456789"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Mã giảng viên
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.teacherCode}
+                    onChange={(e) => setFormData({ ...formData, teacherCode: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="GV001"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Chuyên môn
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.specialization}
+                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="Software Engineering"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Khoa
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="Computer Science"
+                  />
+                </div>
+              </div>
+
+              {formError && (
+                <div
+                  style={{
+                    backgroundColor: "#FEE2E2",
+                    color: "#DC2626",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    marginTop: "20px",
+                    fontSize: "14px",
+                  }}
+                >
+                  {formError}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "20px" }}>
+                <button
+                  onClick={closeTeacherModal}
+                  disabled={formLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#F3F4F6",
+                    color: "#374151",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSubmitTeacher}
+                  disabled={formLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#05386D",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: formLoading ? "not-allowed" : "pointer",
+                    opacity: formLoading ? 0.6 : 1,
+                  }}
+                >
+                  {formLoading ? "Đang lưu..." : editingTeacher ? "Cập nhật" : "Tạo mới"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirm Modal */}
+        {deleteConfirmOpen && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+            onClick={closeDeleteConfirm}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "30px",
+                maxWidth: "500px",
+                width: "90%",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "20px", color: "#DC2626", fontSize: "24px" }}>
+                Xác nhận xóa
+              </h3>
+              <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.5" }}>
+                Bạn có chắc chắn muốn xóa giảng viên <strong>{teacherToDelete?.name}</strong>? 
+                Hành động này không thể hoàn tác.
+              </p>
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                  onClick={closeDeleteConfirm}
+                  disabled={deleteLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#F3F4F6",
+                    color: "#374151",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleDeleteTeacher}
+                  disabled={deleteLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#DC2626",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                    opacity: deleteLoading ? 0.6 : 1,
+                  }}
+                >
+                  {deleteLoading ? "Đang xóa..." : "Xóa"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

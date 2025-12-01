@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentLayout from "../layout/StudentLayout";
-import { getStudents } from "../../api/studentApi";
+import { getStudents, createStudent, updateStudent, deleteStudent } from "../../api/studentApi";
 import { adminInvite } from "../../api/identityApi";
 import { parseApiError } from "../../api/parseApiError";
+import { hasRole } from "../../utils/authUtils";
 import './StudentsPage.css';
 import {
   FaSearch,
@@ -18,6 +19,9 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaPlus,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 
 export default function StudentsPage() {
@@ -28,13 +32,10 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   
   // Sorting & Filtering
-  const [sortBy, setSortBy] = useState(null); // "name", "email", "createdAt"
-  const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
-  const [activeFilter, setActiveFilter] = useState(null); // null, true, false
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [activeFilter, setActiveFilter] = useState(null);
   const [activeFilterOpen, setActiveFilterOpen] = useState(false);
-  const [dateRangeOpen, setDateRangeOpen] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
 
   // Invite modal state
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -43,9 +44,30 @@ export default function StudentsPage() {
   const [inviteSuccess, setInviteSuccess] = useState(null);
   const [inviteEmail, setInviteEmail] = useState("");
 
+  // Create/Edit modal state
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [formData, setFormData] = useState({
+    email: "",
+    name: "",
+    phoneNumber: "",
+    studentCode: "",
+    major: "",
+    cohort: "",
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  // Delete confirm state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
+
+  const isAdmin = hasRole("ADMIN");
 
   useEffect(() => {
     loadStudents();
@@ -56,7 +78,6 @@ export default function StudentsPage() {
       setLoading(true);
       setError(null);
       const response = await getStudents();
-      // API returns: {data: {students: [], total: 0}, success: true}
       setStudents(response.data?.students || []);
     } catch (err) {
       console.error("Error loading students:", err);
@@ -64,6 +85,104 @@ export default function StudentsPage() {
       setError(parsed?.message || String(parsed));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Create/Edit handlers
+  const openCreateModal = () => {
+    setEditingStudent(null);
+    setFormData({
+      email: "",
+      name: "",
+      phoneNumber: "",
+      studentCode: "",
+      major: "",
+      cohort: "",
+    });
+    setFormError(null);
+    setStudentModalOpen(true);
+  };
+
+  const openEditModal = (student) => {
+    setEditingStudent(student);
+    setFormData({
+      email: student.email || "",
+      name: student.name || "",
+      phoneNumber: student.phoneNumber || "",
+      studentCode: student.studentCode || "",
+      major: student.major || "",
+      cohort: student.cohort || "",
+    });
+    setFormError(null);
+    setStudentModalOpen(true);
+  };
+
+  const closeStudentModal = () => {
+    setStudentModalOpen(false);
+    setEditingStudent(null);
+    setFormData({
+      email: "",
+      name: "",
+      phoneNumber: "",
+      studentCode: "",
+      major: "",
+      cohort: "",
+    });
+    setFormError(null);
+  };
+
+  const handleSubmitStudent = async () => {
+    if (!formData.email || !formData.name) {
+      setFormError("Email và tên là bắt buộc");
+      return;
+    }
+
+    setFormLoading(true);
+    setFormError(null);
+
+    try {
+      if (editingStudent) {
+        // Update
+        await updateStudent(editingStudent.studentId, formData);
+      } else {
+        // Create
+        await createStudent(formData);
+      }
+      
+      closeStudentModal();
+      loadStudents();
+    } catch (err) {
+      const parsed = parseApiError(err);
+      setFormError(parsed?.message || String(parsed) || "Lỗi khi lưu học viên");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Delete handlers
+  const openDeleteConfirm = (student) => {
+    setStudentToDelete(student);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setStudentToDelete(null);
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await deleteStudent(studentToDelete.studentId);
+      closeDeleteConfirm();
+      loadStudents();
+    } catch (err) {
+      const parsed = parseApiError(err);
+      alert(parsed?.message || String(parsed) || "Lỗi khi xóa học viên");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -102,68 +221,35 @@ export default function StudentsPage() {
     }
   };
 
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const params = {};
-      if (searchTerm) params.name = searchTerm;
-      
-      const response = await getStudents(params);
-      // API returns: {data: {students: [], total: 0}, success: true}
-      setStudents(response.data?.students || []);
-    } catch (err) {
-      console.error("Error searching students:", err);
-      const parsed = parseApiError(err);
-      setError(parsed?.message || String(parsed));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSort = (field) => {
     if (sortBy === field) {
-      // Toggle sort order if same field
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
-      // New field, start with asc
       setSortBy(field);
       setSortOrder("asc");
     }
   };
 
-  const handleRowClick = (studentId) => {
+  const handleRowClick = (studentId, e) => {
+    // Don't navigate if clicking on action buttons
+    if (e?.target?.closest('.action-buttons')) {
+      return;
+    }
     navigate(`/students/${studentId}`);
   };
 
   // Filter and sort students
   let filteredStudents = students.filter((student) => {
-    // Search filter
     const matchesSearch = 
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.phoneNumber?.includes(searchTerm);
+      student.phoneNumber?.includes(searchTerm) ||
+      student.studentCode?.includes(searchTerm) ||
+      student.major?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Active filter
     const matchesActive = activeFilter === null || student.active === activeFilter;
     
-    // Date range filter
-    let matchesDateRange = true;
-    if (dateFrom || dateTo) {
-      const studentDate = new Date(typeof student.createdAt === "number" ? student.createdAt * 1000 : student.createdAt);
-      if (dateFrom) {
-        const fromDate = new Date(dateFrom);
-        fromDate.setHours(0, 0, 0, 0);
-        matchesDateRange = matchesDateRange && studentDate >= fromDate;
-      }
-      if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        matchesDateRange = matchesDateRange && studentDate <= toDate;
-      }
-    }
-    
-    return matchesSearch && matchesActive && matchesDateRange;
+    return matchesSearch && matchesActive;
   });
 
   // Apply sorting
@@ -196,71 +282,16 @@ export default function StudentsPage() {
   const paginatedStudents = filteredStudents.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
   const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
-  // Reset to page 1 when filters/sorts change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortBy, sortOrder, activeFilter, dateFrom, dateTo]);
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      ACTIVE: {
-        label: "Đang học",
-        icon: <FaCheckCircle />,
-        color: "#10B981",
-        bg: "#D1FAE5",
-      },
-      INACTIVE: {
-        label: "Ngừng học",
-        icon: <FaTimesCircle />,
-        color: "#EF4444",
-        bg: "#FEE2E2",
-      },
-      SUSPENDED: {
-        label: "Tạm ngừng",
-        icon: <FaClock />,
-        color: "#F59E0B",
-        bg: "#FEF3C7",
-      },
-      GRADUATED: {
-        label: "Đã tốt nghiệp",
-        icon: <FaCheckCircle />,
-        color: "#6366F1",
-        bg: "#E0E7FF",
-      },
-    };
-
-    const config = statusConfig[status] || statusConfig.ACTIVE;
-
-    return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "5px",
-          padding: "4px 12px",
-          borderRadius: "12px",
-          backgroundColor: config.bg,
-          color: config.color,
-          fontSize: "13px",
-          fontWeight: 500,
-        }}
-      >
-        {config.icon}
-        {config.label}
-      </span>
-    );
-  };
+  }, [searchTerm, sortBy, sortOrder, activeFilter]);
 
   // Calculate stats
   const stats = {
@@ -322,16 +353,24 @@ export default function StudentsPage() {
           <div className="filters-row">
             <input
               type="text"
-              placeholder="🔍 Tìm kiếm theo tên, email hoặc SĐT..."
+              placeholder="🔍 Tìm kiếm theo tên, email, SĐT, mã SV hoặc chuyên ngành..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
 
-            <button onClick={openInviteModal} className="btn-primary">
-              <FaEnvelope />
-              Thêm học viên
-            </button>
+            <div style={{ display: "flex", gap: "10px" }}>
+              {isAdmin && (
+                <button onClick={openCreateModal} className="btn-primary">
+                  <FaPlus />
+                  Tạo mới
+                </button>
+              )}
+              <button onClick={openInviteModal} className="btn-primary">
+                <FaEnvelope />
+                Mời học viên
+              </button>
+            </div>
           </div>
         </div>
 
@@ -436,6 +475,18 @@ export default function StudentsPage() {
                     }}
                   >
                     Số điện thoại
+                  </th>
+                  <th
+                    style={{
+                      padding: "15px",
+                      textAlign: "left",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Mã SV / Chuyên ngành
                   </th>
                   <th
                     style={{ position: "relative" }}
@@ -547,23 +598,35 @@ export default function StudentsPage() {
                       textTransform: "uppercase",
                       cursor: "pointer",
                       userSelect: "none",
-                      position: "relative",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       Ngày tham gia
                       {sortBy === "createdAt" && (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
                       {sortBy !== "createdAt" && <FaSort style={{ opacity: 0.3 }} />}
-                      {(dateFrom || dateTo) && <FaFilter style={{ color: "#10B981" }} />}
                     </div>
                   </th>
+                  {isAdmin && (
+                    <th
+                      style={{
+                        padding: "15px",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Thao tác
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="5"
+                      colSpan={isAdmin ? "7" : "6"}
                       style={{
                         padding: "40px",
                         textAlign: "center",
@@ -580,7 +643,7 @@ export default function StudentsPage() {
                   paginatedStudents.map((student) => (
                     <tr
                       key={student.studentId}
-                      onClick={() => handleRowClick(student.studentId)}
+                      onClick={(e) => handleRowClick(student.studentId, e)}
                       style={{
                         borderTop: "1px solid #F3F4F6",
                         cursor: "pointer",
@@ -627,6 +690,41 @@ export default function StudentsPage() {
                         {student.phoneNumber || "—"}
                       </td>
                       <td style={{ padding: "15px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          {student.studentCode && (
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 12px",
+                                borderRadius: "12px",
+                                backgroundColor: "#E0E7FF",
+                                color: "#6366F1",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {student.studentCode}
+                            </span>
+                          )}
+                          {student.major && (
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 12px",
+                                borderRadius: "12px",
+                                backgroundColor: "#FEF3C7",
+                                color: "#F59E0B",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {student.major}
+                            </span>
+                          )}
+                          {!student.studentCode && !student.major && "—"}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px" }}>
                         <span
                           style={{
                             display: "inline-flex",
@@ -658,6 +756,54 @@ export default function StudentsPage() {
                             )
                           : "—"}
                       </td>
+                      {isAdmin && (
+                        <td style={{ padding: "15px" }}>
+                          <div className="action-buttons" style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(student);
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#E0E7FF",
+                                color: "#6366F1",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                              title="Chỉnh sửa"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteConfirm(student);
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#FEE2E2",
+                                color: "#EF4444",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                              title="Xóa"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -676,65 +822,332 @@ export default function StudentsPage() {
                   padding: "20px",
                 }}
               >
-              <button
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                style={{
-                  padding: "10px 16px",
-                  backgroundColor: currentPage === 1 ? "#E5E7EB" : "#05386D",
-                  color: currentPage === 1 ? "#9CA3AF" : "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <FaChevronLeft /> Trước
-              </button>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
                   style={{
+                    padding: "10px 16px",
+                    backgroundColor: currentPage === 1 ? "#E5E7EB" : "#05386D",
+                    color: currentPage === 1 ? "#9CA3AF" : "#fff",
+                    border: "none",
+                    borderRadius: "8px",
                     fontSize: "14px",
                     fontWeight: 600,
-                    color: "#374151",
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
                 >
+                  <FaChevronLeft /> Trước
+                </button>
+
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "#374151" }}>
                   Trang {currentPage} / {totalPages}
                 </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: currentPage === totalPages ? "#E5E7EB" : "#05386D",
+                    color: currentPage === totalPages ? "#9CA3AF" : "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  Tiếp <FaChevronRight />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Create/Edit Student Modal */}
+        {studentModalOpen && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+            onClick={closeStudentModal}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "30px",
+                maxWidth: "600px",
+                width: "90%",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "20px", color: "#05386D", fontSize: "24px" }}>
+                {editingStudent ? "Chỉnh sửa học viên" : "Tạo học viên mới"}
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Email <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={!!editingStudent}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      backgroundColor: editingStudent ? "#F3F4F6" : "#fff",
+                    }}
+                    placeholder="student@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Tên <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="Nguyễn Văn A"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Số điện thoại
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="+84123456789"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Mã sinh viên
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.studentCode}
+                    onChange={(e) => setFormData({ ...formData, studentCode: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="SE123456"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Chuyên ngành
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.major}
+                    onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="Software Engineering"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Khóa học
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cohort}
+                    onChange={(e) => setFormData({ ...formData, cohort: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    placeholder="K15, K16, 2024"
+                  />
+                </div>
               </div>
 
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                style={{
-                  padding: "10px 16px",
-                  backgroundColor: currentPage === totalPages ? "#E5E7EB" : "#05386D",
-                  color: currentPage === totalPages ? "#9CA3AF" : "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                Tiếp <FaChevronRight />
-              </button>
+              {formError && (
+                <div
+                  style={{
+                    backgroundColor: "#FEE2E2",
+                    color: "#DC2626",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    marginTop: "20px",
+                    fontSize: "14px",
+                  }}
+                >
+                  {formError}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "20px" }}>
+                <button
+                  onClick={closeStudentModal}
+                  disabled={formLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#F3F4F6",
+                    color: "#374151",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSubmitStudent}
+                  disabled={formLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#05386D",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: formLoading ? "not-allowed" : "pointer",
+                    opacity: formLoading ? 0.6 : 1,
+                  }}
+                >
+                  {formLoading ? "Đang lưu..." : editingStudent ? "Cập nhật" : "Tạo mới"}
+                </button>
+              </div>
             </div>
-            )}
+          </div>
+        )}
+
+        {/* Delete Confirm Modal */}
+        {deleteConfirmOpen && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+            onClick={closeDeleteConfirm}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "30px",
+                maxWidth: "500px",
+                width: "90%",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ marginBottom: "20px", color: "#DC2626", fontSize: "24px" }}>
+                Xác nhận xóa
+              </h3>
+              <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.5" }}>
+                Bạn có chắc chắn muốn xóa học viên <strong>{studentToDelete?.name}</strong>? 
+                Hành động này không thể hoàn tác.
+              </p>
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                  onClick={closeDeleteConfirm}
+                  disabled={deleteLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#F3F4F6",
+                    color: "#374151",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleDeleteStudent}
+                  disabled={deleteLoading}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#DC2626",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: deleteLoading ? "not-allowed" : "pointer",
+                    opacity: deleteLoading ? 0.6 : 1,
+                  }}
+                >
+                  {deleteLoading ? "Đang xóa..." : "Xóa"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

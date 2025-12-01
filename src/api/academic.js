@@ -17,6 +17,10 @@ export const academicApi = {
   getTeacherCourses,
   getTeacherClasses,
   listTeachers,
+  getTeacher,
+  createTeacher,
+  updateTeacher,
+  deleteTeacher,
   generateImportUploadUrl,
   uploadFileToS3,
   getImportJobStatus,
@@ -201,6 +205,29 @@ export async function unenrollFromClass(enrollmentId) {
   return await response.json();
 }
 
+// Tạo đăng ký lịch học (ADMIN)
+export async function createEnrollmentSchedule(payload) {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(
+    `${API_BASE_URL}/academic/enrollments/schedules`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || "Failed to create enrollment schedule");
+  }
+
+  return await response.json();
+}
+
+
+
 // ==================== Teacher APIs ====================
 
 export async function getTeacherCourses(teacherId) {
@@ -266,6 +293,68 @@ export async function listTeachers() {
     console.error('[listTeachers] Fetch error:', error);
     throw error;
   }
+}
+
+export async function getTeacher(teacherId) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/academic/teachers/${teacherId}`, {
+    method: 'GET',
+    headers
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to get teacher');
+  }
+
+  return await response.json();
+}
+
+export async function createTeacher(teacherData) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/academic/teachers`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(teacherData)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create teacher');
+  }
+
+  return await response.json();
+}
+
+export async function updateTeacher(teacherId, teacherData) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/academic/teachers/${teacherId}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(teacherData)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update teacher');
+  }
+
+  return await response.json();
+}
+
+export async function deleteTeacher(teacherId) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/academic/teachers/${teacherId}`, {
+    method: 'DELETE',
+    headers
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete teacher');
+  }
+
+  return await response.json();
 }
 
 // ==================== Import APIs (ADMIN/MANAGER only) ====================
