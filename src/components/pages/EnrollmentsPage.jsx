@@ -7,12 +7,21 @@ import {
   listCourses,
   listClasses,
 } from "../../api/academic";
+import { createEnrollmentSchedule } from "../../api/academic"; // ✅ FIX: thêm API tạo enrollment
+import { parseApiError } from "../../api/parseApiError";
 import { getStudents } from "../../api/studentApi";
 import "./EnrollmentsPage.css";
-
+import {
+  FaClipboardList,
+  FaCheckCircle,
+  FaClock,
+  FaTimesCircle,
+  FaPlus,
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
 export default function EnrollmentsPage() {
   const navigate = useNavigate();
-  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,7 +31,8 @@ export default function EnrollmentsPage() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
 
-  // Data for filters
+  // Data
+  const [enrollments, setEnrollments] = useState([]);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -30,6 +40,16 @@ export default function EnrollmentsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
+
+  // Create Enrollment Modal
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState(null);
+
+  const [enrollForm, setEnrollForm] = useState({
+    studentId: "",
+    classId: "",
+  });
 
   useEffect(() => {
     loadData();
@@ -48,24 +68,33 @@ export default function EnrollmentsPage() {
           listCourses(),
         ]);
 
-      // if (enrollmentsRes.success) {
-      //   setEnrollments(enrollmentsRes.data.enrollments || []);
-      // }
       if (enrollmentsRes.success) {
         const data = enrollmentsRes.data;
         setEnrollments(Array.isArray(data) ? data : data.enrollments || []);
       }
-      
+
       if (studentsRes.data?.students) {
         setStudents(studentsRes.data.students);
       }
 
-      if (classesRes.success) {
-        setClasses(classesRes.data.classes || []);
+      // LOAD CLASSES
+      if (Array.isArray(classesRes.data)) {
+        setClasses(classesRes.data);
+      } else {
+        setClasses([]);
+      }
+      // LOAD COURSES
+      if (Array.isArray(coursesRes.data)) {
+        setCourses(coursesRes.data);
+      } else {
+        setCourses([]);
       }
 
-      if (coursesRes.success) {
-        setCourses(coursesRes.data.courses || []);
+      // LOAD ENROLLMENTS
+      if (Array.isArray(enrollmentsRes.data)) {
+        setEnrollments(enrollmentsRes.data);
+      } else {
+        setEnrollments([]);
       }
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -95,19 +124,28 @@ export default function EnrollmentsPage() {
 
   // Get class info
   const getClassInfo = (classId) => {
-    const classItem = classes.find((c) => c.classId === classId);
-    if (!classItem) return { classCode: classId, courseName: "N/A" };
+    const cls = classes.find((c) => c.classId === classId);
+    if (!cls)
+      return {
+        className: "N/A",
+        courseName: "N/A",
+        schedule: "—",
+        room: "",
+        courseCode: "",
+      };
 
-    const course = courses.find((c) => c.courseId === classItem.courseId);
+    const course = courses.find((c) => c.courseId === cls.courseId);
+
     return {
-      classCode: classItem.classCode || classId,
-      courseName: course?.courseName || classItem.courseName || "N/A",
+      className: cls.className || cls.classCode || "N/A",
+      courseName: course?.courseName || "N/A",
       courseCode: course?.courseCode || "",
-      schedule: classItem.schedule,
-      room: classItem.room,
+      schedule: cls.schedule || "—",
+      room: cls.room || "",
     };
   };
 
+  // Normalize status
   const normalizeStatus = (status) => {
     if (status === "ENROLLED") return "ACTIVE";
     if (status === "PENDING") return "PRE_ENROLLED";
@@ -118,24 +156,8 @@ export default function EnrollmentsPage() {
     ...e,
     status: normalizeStatus(e.status),
   }));
+
   // Filter enrollments
-  // let filteredEnrollments = enrollments.filter((enrollment) => {
-  //   const studentName = getStudentName(enrollment.studentId).toLowerCase();
-  //   const classInfo = getClassInfo(enrollment.classId);
-
-  //   const matchesSearch =
-  //     studentName.includes(searchTerm.toLowerCase()) ||
-  //     classInfo.classCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     classInfo.courseName.toLowerCase().includes(searchTerm.toLowerCase());
-
-  //   const matchesStatus =
-  //     statusFilter === "ALL" || enrollment.status === statusFilter;
-  //   const matchesStudent =
-  //     !selectedStudent || enrollment.studentId === selectedStudent;
-  //   const matchesClass = !selectedClass || enrollment.classId === selectedClass;
-
-  //   return matchesSearch && matchesStatus && matchesStudent && matchesClass;
-  // });
   let filteredEnrollments = normalizedEnrollments.filter((enrollment) => {
     const studentName = (
       getStudentName(enrollment.studentId) || ""
@@ -208,8 +230,14 @@ export default function EnrollmentsPage() {
   // Stats
   const stats = {
     total: enrollments.length,
-    active: enrollments.filter((e) => e.status === "ACTIVE").length,
-    preEnrolled: enrollments.filter((e) => e.status === "PRE_ENROLLED").length,
+    active: enrollments.filter((e) => normalizeStatus(e.status) === "ACTIVE")
+      .length,
+    preEnrolled: enrollments.filter(
+      (e) => normalizeStatus(e.status) === "PRE_ENROLLED"
+    ).length,
+    completed: enrollments.filter(
+      (e) => normalizeStatus(e.status) === "DROPPED"
+    ).length,
   };
 
   return (
@@ -230,43 +258,46 @@ export default function EnrollmentsPage() {
               className="stat-icon"
               style={{ backgroundColor: "#E0E7FF", color: "#6366F1" }}
             >
-              📋
+              <FaClipboardList size={28} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{stats.total}</div>
               <div className="stat-label">Tổng đăng ký</div>
             </div>
           </div>
+
           <div className="stat-card">
             <div
               className="stat-icon"
               style={{ backgroundColor: "#D1FAE5", color: "#10B981" }}
             >
-              ✅
+              <FaCheckCircle size={28} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{stats.active}</div>
               <div className="stat-label">Đang học</div>
             </div>
           </div>
+
           <div className="stat-card">
             <div
               className="stat-icon"
               style={{ backgroundColor: "#FEF3C7", color: "#F59E0B" }}
             >
-              ⏳
+              <FaClock size={28} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{stats.preEnrolled}</div>
               <div className="stat-label">Chờ kích hoạt</div>
             </div>
           </div>
+
           <div className="stat-card">
             <div
               className="stat-icon"
-              style={{ backgroundColor: "#E0E7FF", color: "#6366F1" }}
+              style={{ backgroundColor: "#FEE2E2", color: "#EF4444" }}
             >
-              {/* 🎓 */}
+              <FaTimesCircle size={28} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{stats.completed}</div>
@@ -298,19 +329,6 @@ export default function EnrollmentsPage() {
             </select>
 
             <select
-              value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Tất cả học viên</option>
-              {students.map((student) => (
-                <option key={student.studentId} value={student.studentId}>
-                  {student.name}
-                </option>
-              ))}
-            </select>
-
-            <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               className="filter-select"
@@ -318,14 +336,278 @@ export default function EnrollmentsPage() {
               <option value="">Tất cả lớp học</option>
               {classes.map((classItem) => (
                 <option key={classItem.classId} value={classItem.classId}>
-                  {classItem.classCode}
+                  {classItem.className}
                 </option>
               ))}
             </select>
+            <button
+              className="create-schedule"
+              onClick={() => {
+                setEnrollForm({ studentId: "", classId: "" });
+                setCreateError(null);
+                setOpenCreate(true);
+              }}
+            >
+              <FaPlus />
+              Tạo Đăng Ký
+            </button>
           </div>
         </div>
 
         {error && <div className="error-message">{error}</div>}
+
+        {/* CREATE ENROLLMENT MODAL */}
+        {openCreate && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: "20px",
+            }}
+            onClick={() => setOpenCreate(false)}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "30px",
+                maxWidth: "600px",
+                width: "100%",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3
+                style={{ fontSize: "22px", fontWeight: 700, color: "#05386D" }}
+              >
+                Tạo đăng ký học mới
+              </h3>
+
+              {createError && (
+                <div
+                  style={{
+                    backgroundColor: "#FEE2E2",
+                    color: "#DC2626",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    marginTop: "10px",
+                  }}
+                >
+                  {createError}
+                </div>
+              )}
+
+              {/* FORM */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "15px",
+                  marginTop: "20px",
+                }}
+              >
+                {/* Học viên */}
+                <input
+                  type="text"
+                  placeholder="Nhập tên học viên hoặc Student ID"
+                  value={enrollForm.studentId || ""} // FIX
+                  onChange={(e) =>
+                    setEnrollForm({ ...enrollForm, studentId: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                  }}
+                />
+
+                {/* Lớp học */}
+                <div>
+                  <label style={{ fontWeight: 600 }}>Lớp học *</label>
+
+                  <select
+                    value={enrollForm.classId || ""}
+                    onChange={(e) => {
+                      const classId = e.target.value;
+                      const selectedClass = classes.find(
+                        (c) => c.classId === classId
+                      );
+
+                      setEnrollForm({
+                        ...enrollForm,
+                        classId,
+                        schedule: selectedClass?.schedule || "", // auto fill lịch học
+                      });
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                    }}
+                  >
+                    <option value="">-- Chọn lớp học --</option>
+                    {classes.map((cls) => (
+                      <option key={cls.classId} value={cls.classId}>
+                        {cls.classCode} – {cls.className}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Khóa học */}
+                <div>
+                  <label style={{ fontWeight: 600 }}>Khóa học *</label>
+                  <select
+                    value={enrollForm.courseId || ""} // FIX
+                    onChange={(e) =>
+                      setEnrollForm({ ...enrollForm, courseId: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                    }}
+                  >
+                    <option value="">-- Chọn khóa học --</option>
+                    {courses.map((c) => (
+                      <option key={c.courseId} value={c.courseId}>
+                        {c.courseName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Lịch học */}
+                <div>
+                  <label style={{ fontWeight: 600 }}>Lịch học của lớp</label>
+                  <input
+                    type="text"
+                    value={enrollForm.schedule || "—"}
+                    disabled
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      background: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                    }}
+                  />
+                </div>
+
+                {/* Trạng thái */}
+                <div>
+                  <label style={{ fontWeight: 600 }}>Trạng thái</label>
+                  <input
+                    type="text"
+                    value="Chờ kích hoạt"
+                    disabled
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      background: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                    }}
+                  />
+                </div>
+
+                {/* Ngày đăng ký */}
+                <div>
+                  <label style={{ fontWeight: 600 }}>Ngày đăng ký</label>
+                  <input
+                    type="text"
+                    value={new Date().toLocaleDateString("vi-VN")}
+                    disabled
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      background: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* BUTTONS */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginTop: "25px",
+                  gap: "10px",
+                }}
+              >
+                <button
+                  onClick={() => setOpenCreate(false)}
+                  style={{
+                    padding: "10px 16px",
+                    background: "#E5E7EB",
+                    borderRadius: "8px",
+                    border: "none",
+                  }}
+                >
+                  Huỷ
+                </button>
+
+                <button
+                  onClick={async () => {
+                    if (!enrollForm.studentId)
+                      return setCreateError("Vui lòng chọn học viên");
+                    if (!enrollForm.classId)
+                      return setCreateError("Vui lòng chọn lớp học");
+                    if (!enrollForm.courseId)
+                      return setCreateError("Vui lòng chọn khóa học");
+                    if (!enrollForm.schedule)
+                      return setCreateError("Vui lòng chọn giờ học");
+
+                    const payload = {
+                      ...enrollForm,
+                      status: "PRE_ENROLLED",
+                      enrolledAt: new Date().toISOString(),
+                    };
+
+                    setCreateLoading(true);
+                    try {
+                      await createEnrollmentSchedule(payload);
+                      alert("Tạo đăng ký thành công!");
+                      setOpenCreate(false);
+                      loadData();
+                    } catch (err) {
+                      setCreateError(
+                        parseApiError(err).message || "Không thể tạo đăng ký"
+                      );
+                    } finally {
+                      setCreateLoading(false);
+                    }
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#05386D",
+                    color: "#fff",
+                    borderRadius: "8px",
+                    border: "none",
+                  }}
+                >
+                  {createLoading ? "Đang tạo..." : "Tạo đăng ký"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="loading-state">
@@ -385,7 +667,7 @@ export default function EnrollmentsPage() {
                             </div>
                           </td>
                           <td>
-                            <strong>{classInfo.classCode}</strong>
+                            <strong>{classInfo.className}</strong>
                             {classInfo.room && (
                               <div className="class-room">
                                 📍 {classInfo.room}
@@ -415,15 +697,45 @@ export default function EnrollmentsPage() {
                           </td>
                           <td>
                             <div className="action-buttons">
-                              <button
-                                onClick={() =>
-                                  navigate(`/students/${enrollment.studentId}`)
-                                }
-                                className="btn-view"
-                                title="Xem học viên"
-                              >
-                                👤
-                              </button>
+                              {enrollment.status === "PRE_ENROLLED" && (
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      !confirm(
+                                        "Bạn có chắc muốn kích hoạt đăng ký này?"
+                                      )
+                                    )
+                                      return;
+
+                                    try {
+                                      await activateEnrollment(
+                                        enrollment.enrollmentId
+                                      );
+                                      alert("Đã kích hoạt thành công!");
+                                      loadData();
+                                    } catch (err) {
+                                      alert(
+                                        "Lỗi: " +
+                                          (err.message || "Không thể kích hoạt")
+                                      );
+                                    }
+                                  }}
+                                  className="btn-activate"
+                                  title="Kích hoạt"
+                                  style={{
+                                    backgroundColor: "#10B981",
+                                    color: "white",
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    border: "none",
+                                    fontSize: "16px",
+                                  }}
+                                >
+                                  <FaCheck size={14} />
+                                </button>
+                              )}
+
                               {enrollment.status !== "DROPPED" && (
                                 <button
                                   onClick={() =>
@@ -431,8 +743,17 @@ export default function EnrollmentsPage() {
                                   }
                                   className="btn-delete"
                                   title="Hủy đăng ký"
+                                  style={{
+                                    backgroundColor: "#EF4444",
+                                    color: "white",
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    border: "none",
+                                    fontSize: "16px",
+                                  }}
                                 >
-                                  ✕
+                                  <FaTimes size={14} />
                                 </button>
                               )}
                             </div>
