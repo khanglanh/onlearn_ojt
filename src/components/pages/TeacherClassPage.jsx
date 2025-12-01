@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getClass } from '../../api/academic';
+import { getClass, getCourse } from '../../api/academic';
 import './TeacherClassPage.css';
 
 export default function TeacherClassPage() {
@@ -8,6 +8,7 @@ export default function TeacherClassPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [classData, setClassData] = useState(null);
+  const [courseData, setCourseData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -24,6 +25,25 @@ export default function TeacherClassPage() {
         throw new Error(response.message || 'Failed to load class');
       }
       setClassData(response.data);
+      
+      // Load course details if courseId is available
+      if (response.data?.courseId) {
+        try {
+          const courseResponse = await getCourse(response.data.courseId);
+          if (courseResponse.success) {
+            setCourseData(courseResponse.data);
+            // Merge course info into classData for easier access
+            setClassData(prev => ({
+              ...prev,
+              courseName: courseResponse.data.courseName,
+              courseCode: courseResponse.data.courseCode
+            }));
+          }
+        } catch (courseErr) {
+          console.error('Failed to load course details:', courseErr);
+          // Don't fail the whole page if course loading fails
+        }
+      }
     } catch (err) {
       console.error('Failed to load class:', err);
       setError(err.message);

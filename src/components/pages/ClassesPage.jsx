@@ -5,7 +5,6 @@ import { getClasses, createClass, updateClass, deleteClass, getCourses } from ".
 import { parseApiError } from "../../api/parseApiError";
 import './ClassesPage.css';
 import {
-  FaSearch,
   FaPlus,
   FaEdit,
   FaTrash,
@@ -16,7 +15,6 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
-  FaFilter,
 } from "react-icons/fa";
 
 export default function ClassesPage() {
@@ -28,20 +26,21 @@ export default function ClassesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourseId, setFilterCourseId] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // "create" or "edit"
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
   const [currentClass, setCurrentClass] = useState(null);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     courseId: "",
     className: "",
     teacherId: "",
     schedule: "",
+    status: "",
     room: "",
     capacity: "",
     startDate: "",
@@ -119,6 +118,7 @@ export default function ClassesPage() {
       className: "",
       teacherId: "",
       schedule: "",
+      status: "",
       room: "",
       capacity: "",
       startDate: "",
@@ -142,6 +142,7 @@ export default function ClassesPage() {
       capacity: classItem.capacity || "",
       startDate: classItem.startDate || "",
       endDate: classItem.endDate || "",
+      status: classItem.status || "",
       startTime: classItem.startTime || "",
       durationPerSession: classItem.durationPerSession || "",
     });
@@ -198,12 +199,12 @@ export default function ClassesPage() {
     setModalError(null);
 
     try {
+      const { status, ...rest } = formData;
       const payload = {
-        ...formData,
+        ...rest,
         capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
         durationPerSession: parseInt(formData.durationPerSession, 10),
       };
-
       if (modalMode === "create") {
         await createClass(payload);
       } else {
@@ -213,12 +214,13 @@ export default function ClassesPage() {
           schedule: payload.schedule,
           room: payload.room,
           capacity: payload.capacity,
+          status: payload.status,
           startTime: payload.startTime,
           durationPerSession: payload.durationPerSession,
         };
         await updateClass(currentClass.classId, updatePayload);
       }
-      
+
       closeModal();
       loadClasses(filterCourseId || null);
     } catch (err) {
@@ -266,12 +268,12 @@ export default function ClassesPage() {
   };
 
   const filteredClasses = classes.filter(classItem => {
-    const matchesSearch = 
+    const matchesSearch =
       classItem.className?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       classItem.room?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'ALL' || classItem.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -302,7 +304,6 @@ export default function ClassesPage() {
       ACTIVE: { label: "Đang học", color: "#10B981", bg: "#D1FAE5" },
       UPCOMING: { label: "Sắp học", color: "#3B82F6", bg: "#DBEAFE" },
       COMPLETED: { label: "Hoàn thành", color: "#6B7280", bg: "#F3F4F6" },
-      CANCELLED: { label: "Đã hủy", color: "#EF4444", bg: "#FEE2E2" },
     };
 
     const config = statusConfig[status] || statusConfig.ACTIVE;
@@ -400,7 +401,6 @@ export default function ClassesPage() {
               <option value="ACTIVE">Đang học</option>
               <option value="UPCOMING">Sắp học</option>
               <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Đã hủy</option>
             </select>
 
             <button onClick={openCreateModal} className="btn-primary">
@@ -479,6 +479,7 @@ export default function ClassesPage() {
                 paginatedClasses.map((classItem) => (
                   <div
                     key={classItem.classId}
+                    onClick={() => navigate(`/classes/${classItem.classId}`)}
                     style={{
                       backgroundColor: "#fff",
                       borderRadius: "12px",
@@ -845,6 +846,26 @@ export default function ClassesPage() {
                   />
                 </div>
 
+                {/* Status */}
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Trạng thái
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Đang học"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                   {/* Start Time */}
                   <div>
@@ -1025,7 +1046,7 @@ export default function ClassesPage() {
                 Xác nhận xóa
               </h3>
               <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.6" }}>
-                Bạn có chắc chắn muốn xóa lớp học <strong>{classToDelete?.className}</strong>? 
+                Bạn có chắc chắn muốn xóa lớp học <strong>{classToDelete?.className}</strong>?
                 Hành động này không thể hoàn tác.
               </p>
 

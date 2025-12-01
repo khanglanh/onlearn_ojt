@@ -17,6 +17,7 @@ import RedeemInvitePage from "./components/pages/RedeemInvitePage";
 import CoursesPage from "./components/pages/CoursesPage";
 import CourseDetailPage from "./components/pages/CourseDetailPage";
 import ClassesPage from "./components/pages/ClassesPage";
+import ClassDetailPage from "./components/pages/ClassDetailPage";
 import SessionsPage from "./components/pages/SessionsPage";
 import EnrollmentsPage from "./components/pages/EnrollmentsPage";
 import AttendancePage from "./components/pages/AttendancePage";
@@ -140,6 +141,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ClassesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/classes/:classId"
+          element={
+            <ProtectedRoute>
+              <ClassDetailPage />
             </ProtectedRoute>
           }
         />
