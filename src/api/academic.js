@@ -192,18 +192,35 @@ export async function getAllEnrollments(params = {}) {
 
 export async function unenrollFromClass(enrollmentId) {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/enrollments/${enrollmentId}`, {
-    method: 'DELETE',
-    headers
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/academic/enrollments/${enrollmentId}`,
+    {
+      method: "DELETE",
+      headers,
+    }
+  );
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Unenroll failed');
+    // Nếu có JSON thì parse, không thì tạo message mặc định
+    try {
+      const err = await response.json();
+      throw new Error(err.message || "Unenroll failed");
+    } catch (e) {
+      throw new Error("Unenroll failed");
+    }
   }
-
-  return await response.json();
+  // Một số API trả 204 → không có body
+  if (response.status === 204) {
+    return { success: true };
+  }
+  // Nếu có body JSON thì parse
+  try {
+    return await response.json();
+  } catch {
+    return { success: true };
+  }
 }
+
 
 // Tạo đăng ký lịch học (ADMIN)
 export async function createEnrollmentSchedule(payload) {

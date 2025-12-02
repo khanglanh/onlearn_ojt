@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentLayout from "../layout/StudentLayout";
-import { getStudents, createStudent, updateStudent, deleteStudent } from "../../api/studentApi";
+import StudentLayout from "../layout/StudentLayoutCopy";
+import {
+  getStudents,
+  createStudent,
+  updateStudent,
+  deleteStudent,
+} from "../../api/studentApi";
 import { adminInvite } from "../../api/identityApi";
 import { parseApiError } from "../../api/parseApiError";
 import { hasRole } from "../../utils/authUtils";
-import './StudentsPage.css';
+import "./StudentsPage.css";
 import {
   FaSearch,
   FaFilter,
@@ -30,7 +35,7 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Sorting & Filtering
   const [sortBy, setSortBy] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
@@ -148,7 +153,7 @@ export default function StudentsPage() {
         // Create
         await createStudent(formData);
       }
-      
+
       closeStudentModal();
       loadStudents();
     } catch (err) {
@@ -215,7 +220,9 @@ export default function StudentsPage() {
       }, 1500);
     } catch (err) {
       const parsed = parseApiError(err);
-      setInviteError(parsed?.message || String(parsed) || "Lỗi khi gửi lời mời");
+      setInviteError(
+        parsed?.message || String(parsed) || "Lỗi khi gửi lời mời"
+      );
     } finally {
       setInviteLoading(false);
     }
@@ -232,7 +239,7 @@ export default function StudentsPage() {
 
   const handleRowClick = (studentId, e) => {
     // Don't navigate if clicking on action buttons
-    if (e?.target?.closest('.action-buttons')) {
+    if (e?.target?.closest(".action-buttons")) {
       return;
     }
     navigate(`/students/${studentId}`);
@@ -240,15 +247,16 @@ export default function StudentsPage() {
 
   // Filter and sort students
   let filteredStudents = students.filter((student) => {
-    const matchesSearch = 
+    const matchesSearch =
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.phoneNumber?.includes(searchTerm) ||
       student.studentCode?.includes(searchTerm) ||
       student.major?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesActive = activeFilter === null || student.active === activeFilter;
-    
+
+    const matchesActive =
+      activeFilter === null || student.active === activeFilter;
+
     return matchesSearch && matchesActive;
   });
 
@@ -256,7 +264,7 @@ export default function StudentsPage() {
   if (sortBy) {
     filteredStudents.sort((a, b) => {
       let aVal, bVal;
-      
+
       if (sortBy === "name") {
         aVal = a.name?.toLowerCase() || "";
         bVal = b.name?.toLowerCase() || "";
@@ -264,10 +272,14 @@ export default function StudentsPage() {
         aVal = a.email?.toLowerCase() || "";
         bVal = b.email?.toLowerCase() || "";
       } else if (sortBy === "createdAt") {
-        aVal = new Date(typeof a.createdAt === "number" ? a.createdAt * 1000 : a.createdAt);
-        bVal = new Date(typeof b.createdAt === "number" ? b.createdAt * 1000 : b.createdAt);
+        aVal = new Date(
+          typeof a.createdAt === "number" ? a.createdAt * 1000 : a.createdAt
+        );
+        bVal = new Date(
+          typeof b.createdAt === "number" ? b.createdAt * 1000 : b.createdAt
+        );
       }
-      
+
       if (sortOrder === "asc") {
         return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
       } else {
@@ -279,7 +291,10 @@ export default function StudentsPage() {
   // Pagination logic
   const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedStudents = filteredStudents.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  const paginatedStudents = filteredStudents.slice(
+    startIdx,
+    startIdx + ITEMS_PER_PAGE
+  );
 
   const handlePreviousPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -296,17 +311,19 @@ export default function StudentsPage() {
   // Calculate stats
   const stats = {
     total: students.length,
-    active: students.filter(s => s.active === true).length,
-    inactive: students.filter(s => s.active === false).length,
-    recent: students.filter(s => {
-      const createdDate = new Date(typeof s.createdAt === 'number' ? s.createdAt * 1000 : s.createdAt);
+    active: students.filter((s) => s.active === true).length,
+    inactive: students.filter((s) => s.active === false).length,
+    recent: students.filter((s) => {
+      const createdDate = new Date(
+        typeof s.createdAt === "number" ? s.createdAt * 1000 : s.createdAt
+      );
       const daysSince = (Date.now() - createdDate) / (1000 * 60 * 60 * 24);
       return daysSince <= 7;
-    }).length
+    }).length,
   };
 
   return (
-    <StudentLayout>
+    <StudentLayoutCopy>
       <div className="students-page">
         {/* Header */}
         <div className="page-header">
@@ -319,28 +336,48 @@ export default function StudentsPage() {
         {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon" style={{ backgroundColor: '#E0E7FF', color: '#6366F1' }}>👥</div>
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#E0E7FF", color: "#6366F1" }}
+            >
+              👥
+            </div>
             <div className="stat-content">
               <div className="stat-value">{stats.total}</div>
               <div className="stat-label">Tổng học viên</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon" style={{ backgroundColor: '#D1FAE5', color: '#10B981' }}>✅</div>
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#D1FAE5", color: "#10B981" }}
+            >
+              ✅
+            </div>
             <div className="stat-content">
               <div className="stat-value">{stats.active}</div>
               <div className="stat-label">Hoạt động</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon" style={{ backgroundColor: '#FEE2E2', color: '#EF4444' }}>❌</div>
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#FEE2E2", color: "#EF4444" }}
+            >
+              ❌
+            </div>
             <div className="stat-content">
               <div className="stat-value">{stats.inactive}</div>
               <div className="stat-label">Không hoạt động</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon" style={{ backgroundColor: '#FEF3C7', color: '#F59E0B' }}>🆕</div>
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#FEF3C7", color: "#F59E0B" }}
+            >
+              🆕
+            </div>
             <div className="stat-content">
               <div className="stat-value">{stats.recent}</div>
               <div className="stat-label">Mới (7 ngày)</div>
@@ -439,9 +476,16 @@ export default function StudentsPage() {
                       userSelect: "none",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
                       Học viên
-                      {sortBy === "name" && (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
+                      {sortBy === "name" &&
+                        (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
                       {sortBy !== "name" && <FaSort style={{ opacity: 0.3 }} />}
                     </div>
                   </th>
@@ -458,10 +502,19 @@ export default function StudentsPage() {
                       userSelect: "none",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
                       Email
-                      {sortBy === "email" && (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                      {sortBy !== "email" && <FaSort style={{ opacity: 0.3 }} />}
+                      {sortBy === "email" &&
+                        (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
+                      {sortBy !== "email" && (
+                        <FaSort style={{ opacity: 0.3 }} />
+                      )}
                     </div>
                   </th>
                   <th
@@ -508,7 +561,9 @@ export default function StudentsPage() {
                       }}
                     >
                       Trạng thái
-                      <FaFilter style={{ opacity: activeFilter !== null ? 1 : 0.3 }} />
+                      <FaFilter
+                        style={{ opacity: activeFilter !== null ? 1 : 0.3 }}
+                      />
                     </div>
                     {activeFilterOpen && (
                       <div
@@ -535,7 +590,8 @@ export default function StudentsPage() {
                             width: "100%",
                             padding: "10px 15px",
                             border: "none",
-                            backgroundColor: activeFilter === null ? "#F3F4F6" : "transparent",
+                            backgroundColor:
+                              activeFilter === null ? "#F3F4F6" : "transparent",
                             color: "#374151",
                             textAlign: "left",
                             cursor: "pointer",
@@ -554,7 +610,8 @@ export default function StudentsPage() {
                             width: "100%",
                             padding: "10px 15px",
                             border: "none",
-                            backgroundColor: activeFilter === true ? "#F3F4F6" : "transparent",
+                            backgroundColor:
+                              activeFilter === true ? "#F3F4F6" : "transparent",
                             color: "#374151",
                             textAlign: "left",
                             cursor: "pointer",
@@ -574,7 +631,10 @@ export default function StudentsPage() {
                             width: "100%",
                             padding: "10px 15px",
                             border: "none",
-                            backgroundColor: activeFilter === false ? "#F3F4F6" : "transparent",
+                            backgroundColor:
+                              activeFilter === false
+                                ? "#F3F4F6"
+                                : "transparent",
                             color: "#374151",
                             textAlign: "left",
                             cursor: "pointer",
@@ -600,10 +660,19 @@ export default function StudentsPage() {
                       userSelect: "none",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
                       Ngày tham gia
-                      {sortBy === "createdAt" && (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
-                      {sortBy !== "createdAt" && <FaSort style={{ opacity: 0.3 }} />}
+                      {sortBy === "createdAt" &&
+                        (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />)}
+                      {sortBy !== "createdAt" && (
+                        <FaSort style={{ opacity: 0.3 }} />
+                      )}
                     </div>
                   </th>
                   {isAdmin && (
@@ -657,7 +726,13 @@ export default function StudentsPage() {
                       }
                     >
                       <td style={{ padding: "15px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
                           <div
                             style={{
                               width: "40px",
@@ -690,7 +765,13 @@ export default function StudentsPage() {
                         {student.phoneNumber || "—"}
                       </td>
                       <td style={{ padding: "15px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
                           {student.studentCode && (
                             <span
                               style={{
@@ -732,33 +813,43 @@ export default function StudentsPage() {
                             gap: "5px",
                             padding: "4px 12px",
                             borderRadius: "12px",
-                            backgroundColor: student.active ? "#D1FAE5" : "#FEE2E2",
+                            backgroundColor: student.active
+                              ? "#D1FAE5"
+                              : "#FEE2E2",
                             color: student.active ? "#10B981" : "#EF4444",
                             fontSize: "13px",
                             fontWeight: 500,
                           }}
                         >
-                          {student.active ? <FaCheckCircle /> : <FaTimesCircle />}
+                          {student.active ? (
+                            <FaCheckCircle />
+                          ) : (
+                            <FaTimesCircle />
+                          )}
                           {student.active ? "Hoạt động" : "Không hoạt động"}
                         </span>
                       </td>
                       <td style={{ padding: "15px", color: "#6B7280" }}>
                         {student.createdAt
-                          ? new Date(typeof student.createdAt === "number" ? student.createdAt * 1000 : student.createdAt).toLocaleString(
-                              "vi-VN",
-                              {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )
+                          ? new Date(
+                              typeof student.createdAt === "number"
+                                ? student.createdAt * 1000
+                                : student.createdAt
+                            ).toLocaleString("vi-VN", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
                           : "—"}
                       </td>
                       {isAdmin && (
                         <td style={{ padding: "15px" }}>
-                          <div className="action-buttons" style={{ display: "flex", gap: "8px" }}>
+                          <div
+                            className="action-buttons"
+                            style={{ display: "flex", gap: "8px" }}
+                          >
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -842,7 +933,13 @@ export default function StudentsPage() {
                   <FaChevronLeft /> Trước
                 </button>
 
-                <span style={{ fontSize: "14px", fontWeight: 600, color: "#374151" }}>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#374151",
+                  }}
+                >
                   Trang {currentPage} / {totalPages}
                 </span>
 
@@ -851,13 +948,15 @@ export default function StudentsPage() {
                   disabled={currentPage === totalPages}
                   style={{
                     padding: "10px 16px",
-                    backgroundColor: currentPage === totalPages ? "#E5E7EB" : "#05386D",
+                    backgroundColor:
+                      currentPage === totalPages ? "#E5E7EB" : "#05386D",
                     color: currentPage === totalPages ? "#9CA3AF" : "#fff",
                     border: "none",
                     borderRadius: "8px",
                     fontSize: "14px",
                     fontWeight: 600,
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                    cursor:
+                      currentPage === totalPages ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
@@ -900,19 +999,40 @@ export default function StudentsPage() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 style={{ marginBottom: "20px", color: "#05386D", fontSize: "24px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#05386D",
+                  fontSize: "24px",
+                }}
+              >
                 {editingStudent ? "Chỉnh sửa học viên" : "Tạo học viên mới"}
               </h3>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Email <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     disabled={!!editingStudent}
                     style={{
                       width: "100%",
@@ -927,13 +1047,22 @@ export default function StudentsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Tên <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -946,13 +1075,22 @@ export default function StudentsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Số điện thoại
                   </label>
                   <input
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phoneNumber: e.target.value })
+                    }
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -965,13 +1103,22 @@ export default function StudentsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Mã sinh viên
                   </label>
                   <input
                     type="text"
                     value={formData.studentCode}
-                    onChange={(e) => setFormData({ ...formData, studentCode: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, studentCode: e.target.value })
+                    }
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -984,13 +1131,22 @@ export default function StudentsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Chuyên ngành
                   </label>
                   <input
                     type="text"
                     value={formData.major}
-                    onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, major: e.target.value })
+                    }
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -1003,13 +1159,22 @@ export default function StudentsPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: 600,
+                      color: "#374151",
+                    }}
+                  >
                     Khóa học
                   </label>
                   <input
                     type="text"
                     value={formData.cohort}
-                    onChange={(e) => setFormData({ ...formData, cohort: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cohort: e.target.value })
+                    }
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -1037,7 +1202,14 @@ export default function StudentsPage() {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "20px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
+                  marginTop: "20px",
+                }}
+              >
                 <button
                   onClick={closeStudentModal}
                   disabled={formLoading}
@@ -1069,7 +1241,11 @@ export default function StudentsPage() {
                     opacity: formLoading ? 0.6 : 1,
                   }}
                 >
-                  {formLoading ? "Đang lưu..." : editingStudent ? "Cập nhật" : "Tạo mới"}
+                  {formLoading
+                    ? "Đang lưu..."
+                    : editingStudent
+                    ? "Cập nhật"
+                    : "Tạo mới"}
                 </button>
               </div>
             </div>
@@ -1104,15 +1280,34 @@ export default function StudentsPage() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 style={{ marginBottom: "20px", color: "#DC2626", fontSize: "24px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#DC2626",
+                  fontSize: "24px",
+                }}
+              >
                 Xác nhận xóa
               </h3>
-              <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.5" }}>
-                Bạn có chắc chắn muốn xóa học viên <strong>{studentToDelete?.name}</strong>? 
-                Hành động này không thể hoàn tác.
+              <p
+                style={{
+                  color: "#6B7280",
+                  marginBottom: "20px",
+                  lineHeight: "1.5",
+                }}
+              >
+                Bạn có chắc chắn muốn xóa học viên{" "}
+                <strong>{studentToDelete?.name}</strong>? Hành động này không
+                thể hoàn tác.
               </p>
 
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   onClick={closeDeleteConfirm}
                   disabled={deleteLoading}
@@ -1179,11 +1374,24 @@ export default function StudentsPage() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 style={{ marginBottom: "20px", color: "#05386D", fontSize: "24px" }}>
+              <h3
+                style={{
+                  marginBottom: "20px",
+                  color: "#05386D",
+                  fontSize: "24px",
+                }}
+              >
                 Mời học viên mới
               </h3>
-              <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.5" }}>
-                Nhập địa chỉ email của học viên. Họ sẽ nhận được email với liên kết để hoàn tất đăng ký.
+              <p
+                style={{
+                  color: "#6B7280",
+                  marginBottom: "20px",
+                  lineHeight: "1.5",
+                }}
+              >
+                Nhập địa chỉ email của học viên. Họ sẽ nhận được email với liên
+                kết để hoàn tất đăng ký.
               </p>
 
               <div style={{ marginBottom: "20px" }}>
@@ -1243,7 +1451,13 @@ export default function StudentsPage() {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   onClick={closeInviteModal}
                   disabled={inviteLoading}
@@ -1282,6 +1496,6 @@ export default function StudentsPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </StudentLayoutCopy>
   );
 }

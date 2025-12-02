@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import StudentLayout from "../layout/StudentLayout";
+import StudentLayout from "../layout/StudentLayoutCopy";
 import { getStudentDashboard } from "../../api/studentApi";
 import { parseApiError } from "../../api/parseApiError";
 import {
@@ -185,7 +185,7 @@ export default function StudentDetailPage() {
 
   if (loading) {
     return (
-      <StudentLayout>
+      <StudentLayoutCopy>
         <div style={{ textAlign: "center", padding: "60px" }}>
           <div
             style={{
@@ -206,13 +206,13 @@ export default function StudentDetailPage() {
             `}
           </style>
         </div>
-      </StudentLayout>
+      </StudentLayoutCopy>
     );
   }
 
   if (error || !student) {
     return (
-      <StudentLayout>
+      <StudentLayoutCopy>
         <div style={{ padding: "20px" }}>
           <div
             style={{
@@ -240,12 +240,12 @@ export default function StudentDetailPage() {
             Quay lại danh sách
           </button>
         </div>
-      </StudentLayout>
+      </StudentLayoutCopy>
     );
   }
 
   return (
-    <StudentLayout>
+    <StudentLayoutCopy>
       <div style={{ padding: "20px" }}>
         {/* Back Button & Header */}
         <button
@@ -279,7 +279,9 @@ export default function StudentDetailPage() {
             marginBottom: "20px",
           }}
         >
-          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+          <div
+            style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}
+          >
             <div
               style={{
                 width: "100px",
@@ -305,21 +307,33 @@ export default function StudentDetailPage() {
                   marginBottom: "10px",
                 }}
               >
-                <h1 style={{ fontSize: "32px", fontWeight: 700, color: "#05386D" }}>
+                <h1
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 700,
+                    color: "#05386D",
+                  }}
+                >
                   {student.name}
                 </h1>
                 {getStatusBadge(student.status)}
               </div>
               <div style={{ display: "flex", gap: "30px", color: "#6B7280" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
                   <FaEnvelope />
                   <span>{student.email || "Chưa có"}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
                   <FaPhone />
                   <span>{student.phoneNumber || "Chưa có"}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
                   <FaUser />
                   <span>ID: {student.studentId}</span>
                 </div>
@@ -345,7 +359,13 @@ export default function StudentDetailPage() {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
-            <div style={{ color: "#6B7280", fontSize: "14px", marginBottom: "8px" }}>
+            <div
+              style={{
+                color: "#6B7280",
+                fontSize: "14px",
+                marginBottom: "8px",
+              }}
+            >
               Lớp đang học
             </div>
             <div
@@ -371,7 +391,13 @@ export default function StudentDetailPage() {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
-            <div style={{ color: "#6B7280", fontSize: "14px", marginBottom: "8px" }}>
+            <div
+              style={{
+                color: "#6B7280",
+                fontSize: "14px",
+                marginBottom: "8px",
+              }}
+            >
               Điểm trung bình
             </div>
             <div
@@ -398,7 +424,13 @@ export default function StudentDetailPage() {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
-            <div style={{ color: "#6B7280", fontSize: "14px", marginBottom: "8px" }}>
+            <div
+              style={{
+                color: "#6B7280",
+                fontSize: "14px",
+                marginBottom: "8px",
+              }}
+            >
               Tỷ lệ điểm danh
             </div>
             <div
@@ -425,7 +457,13 @@ export default function StudentDetailPage() {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
-            <div style={{ color: "#6B7280", fontSize: "14px", marginBottom: "8px" }}>
+            <div
+              style={{
+                color: "#6B7280",
+                fontSize: "14px",
+                marginBottom: "8px",
+              }}
+            >
               Ghi chú
             </div>
             <div
@@ -463,7 +501,11 @@ export default function StudentDetailPage() {
               { id: "personal", label: "Thông tin cá nhân", icon: <FaUser /> },
               { id: "enrollments", label: "Lớp học", icon: <FaBook /> },
               { id: "grades", label: "Điểm số", icon: <FaChartLine /> },
-              { id: "attendance", label: "Điểm danh", icon: <FaClipboardCheck /> },
+              {
+                id: "attendance",
+                label: "Điểm danh",
+                icon: <FaClipboardCheck />,
+              },
               { id: "notes", label: "Ghi chú", icon: <FaStickyNote /> },
             ].map((tab) => (
               <button
@@ -496,7 +538,13 @@ export default function StudentDetailPage() {
             {/* Personal Info Tab */}
             {activeTab === "personal" && (
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                  }}
+                >
                   Thông tin cá nhân
                 </h3>
                 <div
@@ -506,8 +554,16 @@ export default function StudentDetailPage() {
                     gap: "20px",
                   }}
                 >
-                  <InfoItem icon={<FaUser />} label="Họ và tên" value={student.name} />
-                  <InfoItem icon={<FaEnvelope />} label="Email" value={student.email} />
+                  <InfoItem
+                    icon={<FaUser />}
+                    label="Họ và tên"
+                    value={student.name}
+                  />
+                  <InfoItem
+                    icon={<FaEnvelope />}
+                    label="Email"
+                    value={student.email}
+                  />
                   <InfoItem
                     icon={<FaPhone />}
                     label="Số điện thoại"
@@ -551,16 +607,36 @@ export default function StudentDetailPage() {
             {/* Enrollments Tab */}
             {activeTab === "enrollments" && (
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                  }}
+                >
                   Lớp học đang tham gia
                 </h3>
                 {enrollments.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
-                    <FaBook style={{ fontSize: "48px", marginBottom: "10px" }} />
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "#9CA3AF",
+                    }}
+                  >
+                    <FaBook
+                      style={{ fontSize: "48px", marginBottom: "10px" }}
+                    />
                     <p>Chưa tham gia lớp học nào</p>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "15px",
+                    }}
+                  >
                     {enrollments.map((enrollment) => (
                       <div
                         key={enrollment.enrollmentId}
@@ -574,12 +650,20 @@ export default function StudentDetailPage() {
                         }}
                       >
                         <div>
-                          <div style={{ fontWeight: 600, color: "#111827", marginBottom: "5px" }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              color: "#111827",
+                              marginBottom: "5px",
+                            }}
+                          >
                             Lớp ID: {enrollment.classId}
                           </div>
                           <div style={{ fontSize: "14px", color: "#6B7280" }}>
                             Ngày tham gia:{" "}
-                            {new Date(enrollment.enrolledAt).toLocaleDateString("vi-VN")}
+                            {new Date(enrollment.enrolledAt).toLocaleDateString(
+                              "vi-VN"
+                            )}
                           </div>
                         </div>
                         {getEnrollmentStatusBadge(enrollment.status)}
@@ -593,12 +677,26 @@ export default function StudentDetailPage() {
             {/* Grades Tab */}
             {activeTab === "grades" && (
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                  }}
+                >
                   Bảng điểm
                 </h3>
                 {grades.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
-                    <FaChartLine style={{ fontSize: "48px", marginBottom: "10px" }} />
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "#9CA3AF",
+                    }}
+                  >
+                    <FaChartLine
+                      style={{ fontSize: "48px", marginBottom: "10px" }}
+                    />
                     <p>Chưa có điểm số</p>
                   </div>
                 ) : (
@@ -614,7 +712,10 @@ export default function StudentDetailPage() {
                     </thead>
                     <tbody>
                       {grades.map((grade) => (
-                        <tr key={grade.gradeId} style={{ borderTop: "1px solid #F3F4F6" }}>
+                        <tr
+                          key={grade.gradeId}
+                          style={{ borderTop: "1px solid #F3F4F6" }}
+                        >
                           <td style={tableCellStyle}>{grade.assignmentName}</td>
                           <td style={tableCellStyle}>{grade.courseId}</td>
                           <td style={tableCellStyle}>
@@ -641,11 +742,16 @@ export default function StudentDetailPage() {
                                 fontWeight: 600,
                               }}
                             >
-                              {((grade.score / grade.maxScore) * 100).toFixed(1)}%
+                              {((grade.score / grade.maxScore) * 100).toFixed(
+                                1
+                              )}
+                              %
                             </span>
                           </td>
                           <td style={tableCellStyle}>
-                            {new Date(grade.gradedAt).toLocaleDateString("vi-VN")}
+                            {new Date(grade.gradedAt).toLocaleDateString(
+                              "vi-VN"
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -658,12 +764,26 @@ export default function StudentDetailPage() {
             {/* Attendance Tab */}
             {activeTab === "attendance" && (
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                  }}
+                >
                   Lịch sử điểm danh
                 </h3>
                 {attendance.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
-                    <FaClipboardCheck style={{ fontSize: "48px", marginBottom: "10px" }} />
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "#9CA3AF",
+                    }}
+                  >
+                    <FaClipboardCheck
+                      style={{ fontSize: "48px", marginBottom: "10px" }}
+                    />
                     <p>Chưa có dữ liệu điểm danh</p>
                   </div>
                 ) : (
@@ -678,14 +798,19 @@ export default function StudentDetailPage() {
                     </thead>
                     <tbody>
                       {attendance.map((record) => (
-                        <tr key={record.attendanceId} style={{ borderTop: "1px solid #F3F4F6" }}>
+                        <tr
+                          key={record.attendanceId}
+                          style={{ borderTop: "1px solid #F3F4F6" }}
+                        >
                           <td style={tableCellStyle}>{record.sessionId}</td>
                           <td style={tableCellStyle}>
                             {getAttendanceStatusBadge(record.status)}
                           </td>
                           <td style={tableCellStyle}>{record.note || "—"}</td>
                           <td style={tableCellStyle}>
-                            {new Date(record.recordedAt).toLocaleDateString("vi-VN")}
+                            {new Date(record.recordedAt).toLocaleDateString(
+                              "vi-VN"
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -698,16 +823,36 @@ export default function StudentDetailPage() {
             {/* Notes Tab */}
             {activeTab === "notes" && (
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                  }}
+                >
                   Ghi chú về học viên
                 </h3>
                 {notes.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#9CA3AF" }}>
-                    <FaStickyNote style={{ fontSize: "48px", marginBottom: "10px" }} />
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "#9CA3AF",
+                    }}
+                  >
+                    <FaStickyNote
+                      style={{ fontSize: "48px", marginBottom: "10px" }}
+                    />
                     <p>Chưa có ghi chú</p>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "15px",
+                    }}
+                  >
                     {notes.map((note) => (
                       <div
                         key={note.noteId}
@@ -718,8 +863,15 @@ export default function StudentDetailPage() {
                           backgroundColor: "#FFFBEB",
                         }}
                       >
-                        <div style={{ fontSize: "14px", color: "#6B7280", marginBottom: "10px" }}>
-                          {new Date(note.createdAt).toLocaleString("vi-VN")} - {note.createdBy}
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#6B7280",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          {new Date(note.createdAt).toLocaleString("vi-VN")} -{" "}
+                          {note.createdBy}
                         </div>
                         <div style={{ color: "#111827" }}>{note.content}</div>
                       </div>
@@ -731,7 +883,7 @@ export default function StudentDetailPage() {
           </div>
         </div>
       </div>
-    </StudentLayout>
+    </StudentLayoutCopy>
   );
 }
 
