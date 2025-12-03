@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentLayout from "../layout/StudentLayout";
+import AdminLayout from "../layout/AdminLayout";
 import { getCourses, createCourse, updateCourse, deleteCourse } from "../../api/academicApi";
 import { parseApiError } from "../../api/parseApiError";
 import './CoursesPage.css';
@@ -292,7 +292,7 @@ export default function CoursesPage() {
   };
 
   return (
-    <StudentLayout>
+    <AdminLayout>
       <div className="courses-page">
         {/* Header */}
         <div className="page-header">
@@ -1003,6 +1003,6 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </AdminLayout>
   );
 }

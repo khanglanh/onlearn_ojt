@@ -1,6 +1,6 @@
 import React from "react";
-import AppSidebar from "./StudentSidebar";
-import Topbar from "./StudentTopbar";
+import StudentSidebar from "./StudentSidebar";
+import StudentTopbar from "./StudentTopbar";
 
 export default function StudentLayout({ children }) {
   return (
@@ -8,14 +8,14 @@ export default function StudentLayout({ children }) {
       
       {/* SIDEBAR BÊN TRÁI */}
       <div style={{ width: "250px", backgroundColor: "#fff", borderRight: "1px solid #eee" }}>
-        <AppSidebar />
+        <StudentSidebar />
       </div>
 
       {/* PHẦN BÊN PHẢI */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
 
         {/* TOPBAR NẰM TRÊN TOÀN BỘ CONTENT */}
-        <Topbar />
+        <StudentTopbar />
 
         {/* CONTENT */}
         <div style={{

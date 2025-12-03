@@ -93,6 +93,35 @@
   gap: 12px;
 }
 
+/* Tabs */
+.enrollment-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.tab-button {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  color: #111827;
+}
+
+.tab-button.active {
+  color: #05386D;
+  border-bottom-color: #05386D;
+}
+
 .search-input,
 .filter-select {
   padding: 10px 14px;
@@ -248,7 +277,9 @@
 }
 
 .btn-view,
-.btn-delete {
+.btn-delete,
+.btn-activate-icon,
+.btn-edit {
   width: 32px;
   height: 32px;
   border: none;
@@ -259,6 +290,18 @@
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.btn-view svg,
+.btn-delete svg,
+.btn-activate-icon svg,
+.btn-edit svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .btn-view {
@@ -279,6 +322,74 @@
 .btn-delete:hover {
   background: #FECACA;
   transform: scale(1.05);
+}
+
+.btn-activate-icon {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.btn-activate-icon:hover {
+  background: #A7F3D0;
+  transform: scale(1.05);
+}
+
+.btn-edit {
+  background: #DBEAFE;
+  color: #3B82F6;
+}
+
+.btn-edit:hover {
+  background: #BFDBFE;
+  transform: scale(1.05);
+}
+
+/* Bulk action buttons */
+.btn-activate-bulk,
+.btn-delete-bulk {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-activate-bulk {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.btn-activate-bulk:hover {
+  background: #A7F3D0;
+}
+
+.btn-delete-bulk {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.btn-delete-bulk:hover {
+  background: #FECACA;
+}
+
+/* Single activate button in cancelled tab */
+.btn-activate {
+  background-color: #10B981;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-activate:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
 }
 
 /* Pagination */

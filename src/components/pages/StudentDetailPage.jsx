@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import StudentLayout from "../layout/StudentLayout";
-import { getStudentDashboard } from "../../api/studentApi";
+import { getStudentDashboard, getStudent } from "../../api/studentApi";
 import { parseApiError } from "../../api/parseApiError";
 import {
   FaArrowLeft,
@@ -42,20 +42,23 @@ export default function StudentDetailPage() {
       setLoading(true);
       setError(null);
 
-      // Use the aggregator API to fetch all data in one call
-      const dashboardResponse = await getStudentDashboard(studentId);
-      const { studentInfo, academicInfo } = dashboardResponse.data;
+      // Fetch student info and academic summary separately
+      // Academic summary returns: { enrollments, grades, attendances }
+      const [studentResponse, academicResponse] = await Promise.all([
+        getStudent(studentId),
+        getStudentDashboard(studentId)
+      ]);
 
-      // Set student info (includes notes)
-      setStudent(studentInfo);
-      setNotes(studentInfo.notes || []);
+      // Set student info
+      setStudent(studentResponse.data || studentResponse);
+      setNotes((studentResponse.data?.notes || studentResponse.notes) || []);
 
-      // Set academic info (if available)
-      if (academicInfo) {
-        setEnrollments(academicInfo.enrollments || []);
-        setGrades(academicInfo.grades || []);
-        setAttendance(academicInfo.attendances || []);
-      }
+      // Set academic info from summary response
+      // Response format: { enrollments: [], grades: [], attendances: [] }
+      const academicData = academicResponse.data || academicResponse;
+      setEnrollments(academicData.enrollments || []);
+      setGrades(academicData.grades || []);
+      setAttendance(academicData.attendances || []);
     } catch (err) {
       console.error("Error loading student data:", err);
       const parsed = parseApiError(err);

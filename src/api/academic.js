@@ -63,6 +63,36 @@ async function getAuthHeaders() {
   };
 }
 
+// Helper function to handle fetch with better error handling
+async function fetchWithErrorHandling(url, options = {}) {
+  if (!API_BASE_URL) {
+    throw new Error('API base URL is not configured. Please check your environment variables.');
+  }
+
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      let error;
+      try {
+        error = await response.json();
+      } catch (e) {
+        error = { error: `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection and API configuration.');
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
+
 // ==================== Profile ====================
 
 export async function getMyProfile() {
@@ -75,38 +105,28 @@ export async function getMyProfile() {
     endpoint = `${API_BASE_URL}/academic/teachers/me`;
   } else if (role === 'STUDENT') {
     endpoint = `${API_BASE_URL}/academic/students/me`;
+  } else if (role === 'ADMIN' || role === 'MANAGER') {
+    // Admin/Manager can use either endpoint, but we'll use teachers/me as it's more generic
+    // The backend will handle returning admin profile from token claims
+    endpoint = `${API_BASE_URL}/academic/teachers/me`;
   } else {
-    throw new Error(`Invalid role: ${role}. Only STUDENT and TEACHER can access profile.`);
+    throw new Error(`Invalid role: ${role}. Only STUDENT, TEACHER, ADMIN, and MANAGER can access profile.`);
   }
 
-  const response = await fetch(endpoint, {
+  return await fetchWithErrorHandling(endpoint, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get profile');
-  }
-
-  return await response.json();
 }
 
 // ==================== Search ====================
 
 export async function searchAcademic(query) {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/search?q=${encodeURIComponent(query)}`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/search?q=${encodeURIComponent(query)}`, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Search failed');
-  }
-
-  return await response.json();
 }
 
 // ==================== Enrollment ====================
@@ -122,7 +142,7 @@ export async function enrollInClass(classId, enrollKey) {
 
   const studentId = profileResponse.data.studentId;
 
-  const response = await fetch(`${API_BASE_URL}/academic/enrollments`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/enrollments`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -131,13 +151,6 @@ export async function enrollInClass(classId, enrollKey) {
       enrollKey
     })
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Enrollment failed');
-  }
-
-  return await response.json();
 }
 
 export async function getMyEnrollments() {
@@ -151,17 +164,10 @@ export async function getMyEnrollments() {
 
   const studentId = profileResponse.data.studentId;
 
-  const response = await fetch(`${API_BASE_URL}/academic/enrollments?studentId=${studentId}`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/enrollments?studentId=${studentId}`, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get enrollments');
-  }
-
-  return await response.json();
 }
 
 // Get all enrollments (for admin/manager)
@@ -177,39 +183,57 @@ export async function getAllEnrollments(params = {}) {
     ? `${API_BASE_URL}/academic/enrollments?${queryString}`
     : `${API_BASE_URL}/academic/enrollments`;
 
-  const response = await fetch(url, {
+  return await fetchWithErrorHandling(url, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get enrollments');
-  }
-
-  return await response.json();
 }
 
 export async function unenrollFromClass(enrollmentId) {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/enrollments/${enrollmentId}`, {
-    method: 'DELETE',
-    headers
-  });
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/academic/enrollments/${enrollmentId}`, {
+      method: 'DELETE',
+      headers
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Unenroll failed');
+    if (!response.ok) {
+      let error;
+      try {
+        error = await response.json();
+      } catch (e) {
+        error = { error: `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw new Error(error.error || error.message || 'Unenroll failed');
+    }
+
+    // 204 No Content has no body, so don't try to parse JSON
+    if (response.status === 204) {
+      return { success: true };
+    }
+
+    // If there's a body, parse it
+    const text = await response.text();
+    if (text) {
+      return JSON.parse(text);
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection and API configuration.');
+    }
+    throw error;
   }
-
-  return await response.json();
 }
 
 // Tạo đăng ký lịch học (ADMIN)
 export async function createEnrollmentSchedule(payload) {
+  console.log('[createEnrollmentSchedule] payload =', payload);
   const headers = await getAuthHeaders();
 
-  const response = await fetch(
+  return await fetchWithErrorHandling(
     `${API_BASE_URL}/academic/enrollments/schedules`,
     {
       method: "POST",
@@ -217,16 +241,21 @@ export async function createEnrollmentSchedule(payload) {
       body: JSON.stringify(payload),
     }
   );
-
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || "Failed to create enrollment schedule");
-  }
-
-  return await response.json();
 }
 
+// Cập nhật trạng thái enrollment (ADMIN)
+export async function updateEnrollmentStatus(enrollmentId, status) {
+  const headers = await getAuthHeaders();
 
+  return await fetchWithErrorHandling(
+    `${API_BASE_URL}/academic/enrollments/${enrollmentId}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ status }),
+    }
+  );
+}
 
 // ==================== Teacher APIs ====================
 
@@ -261,11 +290,6 @@ export async function getTeacherClasses(teacherId) {
 }
 
 export async function listTeachers() {
-  if (!API_BASE_URL) {
-    console.error('[listTeachers] API_BASE_URL is not configured');
-    throw new Error('API base URL is not configured. Please check your environment variables.');
-  }
-
   const url = `${API_BASE_URL}/academic/teachers`;
   console.log('[listTeachers] Fetching from:', url);
   
@@ -273,20 +297,10 @@ export async function listTeachers() {
   console.log('[listTeachers] Headers:', { ...headers, Authorization: 'Bearer [REDACTED]' });
   
   try {
-    const response = await fetch(url, {
+    const data = await fetchWithErrorHandling(url, {
       method: 'GET',
       headers
     });
-
-    console.log('[listTeachers] Response status:', response.status);
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
-      console.error('[listTeachers] Error response:', error);
-      throw new Error(error.message || `Failed to list teachers (${response.status})`);
-    }
-
-    const data = await response.json();
     console.log('[listTeachers] Success, received teachers:', data);
     return data;
   } catch (error) {
@@ -464,50 +478,29 @@ export async function getClass(classId) {
 
 export async function listCourses() {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/courses`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/courses`, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to list courses');
-  }
-
-  return await response.json();
 }
 
 export async function listClasses() {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/classes`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/classes`, {
     method: 'GET',
     headers
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to list classes');
-  }
-
-  return await response.json();
 }
 
 // ==================== Materials APIs ====================
 
 export async function createMaterialsFolder(courseId, classId, folderName) {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/academic/courses/${courseId}/classes/${classId}/materials/folder`, {
+  return await fetchWithErrorHandling(`${API_BASE_URL}/academic/courses/${courseId}/classes/${classId}/materials/folder`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ folderName })
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create folder');
-  }
-
-  return await response.json();
 }
 
 export async function generateMaterialsUploadUrl(courseId, classId, fileName, contentType, fileSize, folder = 'General') {

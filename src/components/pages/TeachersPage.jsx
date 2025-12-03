@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import StudentLayout from "../layout/StudentLayout";
+import AdminLayout from "../layout/AdminLayout";
 import { adminInvite } from "../../api/identityApi";
 import { academicApi } from "../../api/academic";
 import { parseApiError } from "../../api/parseApiError";
@@ -333,7 +333,7 @@ export default function TeachersPage() {
   };
 
   return (
-    <StudentLayout>
+    <AdminLayout>
       <div className="teachers-page">
         {/* Header */}
         <div className="page-header">
@@ -1289,6 +1289,6 @@ export default function TeachersPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </AdminLayout>
   );
 }
