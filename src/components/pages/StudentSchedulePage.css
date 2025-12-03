@@ -1,0 +1,112 @@
+/*                HEADER & TITLES                  */
+/* =============================================== */
+
+.student-schedule {
+  padding: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.schedule-header h1{
+  color: #05386D !important;
+}
+.profile-sv{
+  color: black ;
+}
+
+
+/* Khung card của mỗi block */
+.class-row-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 3px 10px rgba(164, 25, 25, 0.05);
+  transition: 0.25s;
+}
+
+/* Hover */
+.class-row-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+
+/* Tiêu đề môn học */
+.class-row-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #05386D;
+  margin-bottom: 16px;
+}
+
+/* LIST FIELD HIỂN THỊ DẠNG CỘT */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Mỗi dòng như bảng */
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  transition: 0.25s ease;
+}
+
+/* Hover cho sáng hơn */
+.detail-row:hover {
+  background: #e8f0ff;
+  border-color: #3b82f6;
+}
+
+/* Icon */
+.detail-row svg {
+  font-size: 18px;
+  color: #3b82f6;
+  margin-right: 10px;
+}
+
+/* LABEL ở bên trái */
+.detail-label {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #334155;
+  min-width: 120px;
+    flex: 1; 
+
+}
+
+/* VALUE bên phải */
+.detail-value {
+  font-weight: 600;
+  color: #05386D;
+}
+
+/* Badge trạng thái nếu dùng */
+.status-active,
+.status-enrolled {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.status-pending,
+.status-pre_enrolled {
+  background: #fff7c2;
+  color: #b45309;
+}
+
+.status-dropped {
+  background: #fee2e2;
+  color: #b91c1c;
+}

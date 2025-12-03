@@ -113,32 +113,53 @@ export async function searchAcademic(query) {
 
 export async function enrollInClass(classId, enrollKey) {
   const headers = await getAuthHeaders();
-  
-  // Get my profile to get studentId
+
   const profileResponse = await getMyProfile();
-  if (!profileResponse.success || !profileResponse.data.studentId) {
-    throw new Error('Student profile not found');
+  if (!profileResponse.success || !profileResponse.data?.studentId) {
+    throw new Error(profileResponse.message || "Student profile not found");
   }
 
   const studentId = profileResponse.data.studentId;
 
   const response = await fetch(`${API_BASE_URL}/academic/enrollments`, {
-    method: 'POST',
+    method: "POST",
     headers,
     body: JSON.stringify({
       classId,
       studentId,
-      enrollKey
-    })
+      enrollKey, // nếu backend dùng tên khác (vd: enrollmentKey) thì đổi ở đây
+    }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Enrollment failed');
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    // không parse được thì thôi
   }
 
-  return await response.json();
+  if (!response.ok) {
+    console.error("Enroll API error:", response.status, data);
+
+    const msgFromServer =
+      data?.message ||
+      data?.error ||
+      (Array.isArray(data?.errors) ? data.errors.join(", ") : null);
+
+    const err = new Error(
+      msgFromServer || `Enrollment failed (HTTP ${response.status})`
+    );
+    err.status = response.status;
+    err.data = data;
+    throw err;
+  }
+
+  // nếu backend không trả JSON thì trả lại object tối thiểu
+  return data ?? { success: true };
 }
+
+
 
 export async function getMyEnrollments() {
   const headers = await getAuthHeaders();

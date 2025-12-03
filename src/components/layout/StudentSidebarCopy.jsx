@@ -11,8 +11,8 @@ import {
   FaMoneyBill,
   FaUser,
   FaComments,
-  FaUsers,
   FaGraduationCap,
+  FaUsers,
   FaChalkboardTeacher,
   FaUserClock,
   FaClipboard,
@@ -96,16 +96,24 @@ export default function AppSidebar() {
 
         <MenuItem
           active={isActive("/student/courses")}
-          icon={<FaBookOpen />}
+          icon={<FaGraduationCap />}
           component={<Link to="/student/courses" />}
         >
-          Khóa học của tôi
+          Danh sách khóa học
         </MenuItem>
 
         <MenuItem
-          active={isActive("/schedule")}
+          active={isActive("/student/my-classes")}
+          icon={<FaBookOpen />}
+          component={<Link to="/student/my-classes" />}
+        >
+          Lớp học của tôi
+        </MenuItem>
+
+        <MenuItem
+          active={isActive("/student/schedule")}
           icon={<FaCalendarAlt />}
-          component={<Link to="/schedule" />}
+          component={<Link to="/student/schedule" />}
         >
           Lịch học
         </MenuItem>
@@ -140,28 +148,6 @@ export default function AppSidebar() {
           component={<Link to="/grades" />}
         >
           Điểm số
-        </MenuItem>
-
-        {/* GROUP: ĐĂNG KÝ */}
-        <div
-          style={{
-            marginTop: "20px",
-            marginBottom: "8px",
-            fontSize: "13px",
-            color: "#888",
-            paddingLeft: "5px",
-            fontWeight: 600,
-          }}
-        >
-          Đăng ký
-        </div>
-
-        <MenuItem
-          active={isActive("/enrollments")}
-          icon={<FaClipboard />}
-          component={<Link to="/enrollments" />}
-        >
-          Đăng ký lớp học
         </MenuItem>
 
         {/* GROUP: TÀI KHOẢN */}

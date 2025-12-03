@@ -6,7 +6,8 @@ import VerifyPage from "./components/VerifyPage";
 import ForgotPasswordPage from "./components/ForgotPasswordPage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
 import DashboardPage from "./components/pages/DashboardPage";
-import SchedulePage from "./components/pages/SchedulePage";
+// import SchedulePage from "./components/pages/SchedulePage";
+import StudentSchedulePage from "./components/pages/StudentSchedulePage";
 import ChangePasswordPage from "./components/ChangePasswordPage";
 import ProfilePage from "./components/pages/ProfilePage";
 import StudentsPage from "./components/pages/StudentsPage";
@@ -35,6 +36,7 @@ import TeacherStatisticsPage from "./components/pages/TeacherStatisticsPage";
 import TeacherMaterialsPage from "./components/TeacherMaterialsPage";
 import StudentSearchPage from "./components/pages/StudentSearchPage";
 import StudentCoursesPage from "./components/pages/StudentCoursesPage";
+import StudentClassPage from "./components/pages/StudentClassPage";
 import StudentMaterialsPage from "./components/StudentMaterialsPage";
 import StudentDashboardPage from "./components/pages/StudentDashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -71,14 +73,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/schedule"
           element={
             <ProtectedRoute>
               <SchedulePage />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/settings/change-password"
           element={
@@ -296,6 +298,30 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["STUDENT"]}>
               <StudentCoursesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/my-classes"
+          element={
+            <ProtectedRoute allowedRoles={["STUDENT"]}>
+              <StudentClassPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/my-classes/:courseId"
+          element={
+            <ProtectedRoute allowedRoles={["STUDENT"]}>
+              <StudentClassPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/schedule"
+          element={
+            <ProtectedRoute allowedRoles={["STUDENT"]}>
+              <StudentSchedulePage />
             </ProtectedRoute>
           }
         />

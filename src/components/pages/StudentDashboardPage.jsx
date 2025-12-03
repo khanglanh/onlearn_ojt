@@ -53,7 +53,7 @@ export default function StudentDashboardPage() {
       else raw = [];
 
       // Loại bỏ enrollment đã hủy
-      raw = raw.filter((e) => e.status !== "DROPPED");
+      raw = raw.filter((e) => e.status !== "DROPPED" && e.status !== "PENDING");
       // FULL JOIN
       const classCache = {};
       const courseCache = {};
@@ -110,9 +110,6 @@ export default function StudentDashboardPage() {
           level: courseInfo?.level,
         });
       }
-
-      console.table(joined);
-
       setEnrollments(joined);
 
       // =============================
@@ -147,7 +144,6 @@ export default function StudentDashboardPage() {
       setLoading(false);
     }
   };
-
   function formatDate(value) {
     if (!value) return "—";
 
@@ -186,8 +182,48 @@ export default function StudentDashboardPage() {
   const completedHours = Math.floor(todayHours * 0.7); // Mock: 70% completed
 
   const maxHours = Math.max(...weeklySchedule.map((d) => d.hours), 1);
-  // Weekly real schedule
+
+  // SỐ BUỔI HỌC CÓ TRONG TUẦN NÀY
   // ===========================
+
+  function getISOWeekRange(date = new Date()) {
+    const day = date.getDay(); // 0 = Sun
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diffToMonday);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    return { monday, sunday };
+  }
+
+  const { monday, sunday } = getISOWeekRange();
+
+  const weeklySessions = enrollments.reduce((count, item) => {
+    if (!item.schedule || !item.startDate || !item.endDate) return count;
+
+    const days = item.schedule.split(",").map((d) => d.trim());
+
+    // chuyển Mon/Tue/... thành số
+    const dayMap = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 0 };
+
+    days.forEach((d) => {
+      const targetDay = dayMap[d];
+      if (targetDay === undefined) return;
+
+      // tạo date của ngày đó trong tuần
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + (targetDay === 0 ? 6 : targetDay - 1));
+
+      if (date >= new Date(item.startDate) && date <= new Date(item.endDate)) {
+        count++;
+      }
+    });
+
+    return count;
+  }, 0);
+
   // Weekly REAL schedule
   // ===========================
 
@@ -280,11 +316,12 @@ export default function StudentDashboardPage() {
               <FaClock size={26} />
             </div>
             <div className="stat-content">
-              <div className="stat-value">{todayHours}</div>
-              <div className="stat-label">Giờ học</div>
+              <div className="stat-value">{weeklySessions}</div>
+              <div className="stat-label">Buổi học trong tuần</div>
             </div>
           </div>
-          <div className="stat-card">
+
+          {/* <div className="stat-card">
             <div className="stat-icon done">
               <FaCheckDouble size={26} />
             </div>
@@ -292,7 +329,7 @@ export default function StudentDashboardPage() {
               <div className="stat-value">{completedHours}</div>
               <div className="stat-label">Đã hoàn thành</div>
             </div>
-          </div>
+          </div> */}
 
           {/* <div className="stat-card">
             <div className="stat-icon">📊</div>
