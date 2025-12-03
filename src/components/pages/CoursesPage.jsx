@@ -24,14 +24,14 @@ export default function CoursesPage() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("ALL");
-  
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // "create" or "edit"
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
   const [currentCourse, setCurrentCourse] = useState(null);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     courseName: "",
@@ -165,6 +165,16 @@ export default function CoursesPage() {
       return;
     }
 
+    if (!formData.level || !["BEGINNER", "INTERMEDIATE", "ADVANCED"].includes(formData.level)) {
+      setModalError("Vui lòng chọn cấp độ hợp lệ");
+      return;
+    }
+
+    if (!formData.price) {
+      setModalError("Vui lòng nhập học phí");
+      return;
+    }
+
     // Validate relationship: durationInSessions must be >= duration * 2 and <= duration * 7
     const minSessions = duration * 2;
     const maxSessions = duration * 7;
@@ -186,7 +196,7 @@ export default function CoursesPage() {
       } else {
         await updateCourse(currentCourse.courseId, formData);
       }
-      
+
       closeModal();
       loadCourses();
     } catch (err) {
@@ -234,12 +244,12 @@ export default function CoursesPage() {
   };
 
   const filteredCourses = courses.filter(course => {
-    const matchesSearch = 
+    const matchesSearch =
       course.courseName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.courseCode?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesLevel = levelFilter === 'ALL' || course.level === levelFilter;
-    
+
     return matchesSearch && matchesLevel;
   });
 
@@ -403,7 +413,7 @@ export default function CoursesPage() {
         )}
 
         {/* Courses Grid */}
-         {!loading && (
+        {!loading && (
           <>
             <div
               style={{
@@ -413,163 +423,163 @@ export default function CoursesPage() {
               }}
             >
               {paginatedCourses.length === 0 && filteredCourses.length === 0 ? (
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  backgroundColor: "#fff",
-                  padding: "60px",
-                  borderRadius: "12px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  textAlign: "center",
-                }}
-              >
-                <FaBook style={{ fontSize: "48px", color: "#9CA3AF", marginBottom: "15px" }} />
-                <p style={{ color: "#6B7280", fontSize: "16px" }}>
-                  {searchTerm ? "Không tìm thấy khóa học phù hợp" : "Chưa có khóa học nào"}
-                </p>
-              </div>
-            ) : (
-              filteredCourses.map((course) => (
                 <div
-                  key={course.courseId}
-                  onClick={() => navigate(`/courses/${course.courseId}`)}
                   style={{
+                    gridColumn: "1 / -1",
                     backgroundColor: "#fff",
+                    padding: "60px",
                     borderRadius: "12px",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    overflow: "hidden",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+                    textAlign: "center",
                   }}
                 >
-                  {/* Course Header */}
+                  <FaBook style={{ fontSize: "48px", color: "#9CA3AF", marginBottom: "15px" }} />
+                  <p style={{ color: "#6B7280", fontSize: "16px" }}>
+                    {searchTerm ? "Không tìm thấy khóa học phù hợp" : "Chưa có khóa học nào"}
+                  </p>
+                </div>
+              ) : (
+                filteredCourses.map((course) => (
                   <div
+                    key={course.courseId}
+                    onClick={() => navigate(`/courses/${course.courseId}`)}
                     style={{
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      padding: "20px",
-                      color: "#fff",
+                      backgroundColor: "#fff",
+                      borderRadius: "12px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      overflow: "hidden",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "5px" }}>
-                          {course.courseCode}
+                    {/* Course Header */}
+                    <div
+                      style={{
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        padding: "20px",
+                        color: "#fff",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "5px" }}>
+                            {course.courseCode}
+                          </div>
+                          <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
+                            {course.courseName}
+                          </h3>
                         </div>
-                        <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
-                          {course.courseName}
-                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Course Body */}
+                    <div style={{ padding: "20px" }}>
+                      {course.description && (
+                        <p
+                          style={{
+                            color: "#6B7280",
+                            fontSize: "14px",
+                            lineHeight: "1.6",
+                            marginBottom: "15px",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {course.description}
+                        </p>
+                      )}
+
+                      <div style={{ display: "flex", gap: "15px", marginBottom: "15px", flexWrap: "wrap" }}>
+                        {course.duration && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7280", fontSize: "13px" }}>
+                            <FaClock />
+                            <span>{course.duration} tuần</span>
+                          </div>
+                        )}
+                        {course.durationInSessions && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7280", fontSize: "13px" }}>
+                            <FaUsers />
+                            <span>{course.durationInSessions} buổi</span>
+                          </div>
+                        )}
+                        {course.level && (
+                          <div>{getLevelBadge(course.level)}</div>
+                        )}
+                      </div>
+
+                      {course.price && (
+                        <div style={{ fontSize: "20px", fontWeight: 700, color: "#05386D", marginBottom: "15px" }}>
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(course.price)}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div style={{ display: "flex", gap: "10px", paddingTop: "15px", borderTop: "1px solid #F3F4F6" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(course);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: "8px 16px",
+                            backgroundColor: "#F3F4F6",
+                            color: "#374151",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <FaEdit />
+                          Sửa
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteConfirm(course);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: "8px 16px",
+                            backgroundColor: "#FEE2E2",
+                            color: "#DC2626",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <FaTrash />
+                          Xóa
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Course Body */}
-                  <div style={{ padding: "20px" }}>
-                    {course.description && (
-                      <p
-                        style={{
-                          color: "#6B7280",
-                          fontSize: "14px",
-                          lineHeight: "1.6",
-                          marginBottom: "15px",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {course.description}
-                      </p>
-                    )}
-
-                    <div style={{ display: "flex", gap: "15px", marginBottom: "15px", flexWrap: "wrap" }}>
-                      {course.duration && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7280", fontSize: "13px" }}>
-                          <FaClock />
-                          <span>{course.duration} tuần</span>
-                        </div>
-                      )}
-                      {course.durationInSessions && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7280", fontSize: "13px" }}>
-                          <FaUsers />
-                          <span>{course.durationInSessions} buổi</span>
-                        </div>
-                      )}
-                      {course.level && (
-                        <div>{getLevelBadge(course.level)}</div>
-                      )}
-                    </div>
-
-                    {course.price && (
-                      <div style={{ fontSize: "20px", fontWeight: 700, color: "#05386D", marginBottom: "15px" }}>
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(course.price)}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div style={{ display: "flex", gap: "10px", paddingTop: "15px", borderTop: "1px solid #F3F4F6" }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(course);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "8px 16px",
-                          backgroundColor: "#F3F4F6",
-                          color: "#374151",
-                          border: "none",
-                          borderRadius: "8px",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FaEdit />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDeleteConfirm(course);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "8px 16px",
-                          backgroundColor: "#FEE2E2",
-                          color: "#DC2626",
-                          border: "none",
-                          borderRadius: "8px",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FaTrash />
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
+                ))
               )}
             </div>
 
@@ -716,7 +726,7 @@ export default function CoursesPage() {
                 {/* Course Name */}
                 <div>
                   <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                    Tên khóa học <span style={{ color: "#DC2626" }}>*</span>
+                    Tên khóa học {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                   </label>
                   <input
                     type="text"
@@ -736,7 +746,7 @@ export default function CoursesPage() {
                 {/* Course Code */}
                 <div>
                   <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                    Mã khóa học <span style={{ color: "#DC2626" }}>*</span>
+                    Mã khóa học {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                   </label>
                   <input
                     type="text"
@@ -775,76 +785,76 @@ export default function CoursesPage() {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                   {/* Duration */}
-                   <div>
-                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                       Thời lượng (tuần) <span style={{ color: "#DC2626" }}>*</span>
-                     </label>
-                     <input
-                       type="number"
-                       placeholder="VD: 12"
-                       value={formData.duration}
-                       onChange={(e) => handleNumberInput(e, "duration")}
-                       min="0"
-                       style={{
-                         width: "100%",
-                         padding: "12px",
-                         border: "1px solid #E5E7EB",
-                         borderRadius: "8px",
-                         fontSize: "14px",
-                       }}
-                     />
-                     {formData.duration && (
-                       <p style={{ marginTop: "6px", fontSize: "12px", color: "#6B7280" }}>
-                         Số buổi học tối thiểu: {parseInt(formData.duration, 10) * 2}, tối đa: {parseInt(formData.duration, 10) * 7}
-                       </p>
-                     )}
-                   </div>
+                  {/* Duration */}
+                  <div>
+                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                      Thời lượng (tuần) {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="VD: 12"
+                      value={formData.duration}
+                      onChange={(e) => handleNumberInput(e, "duration")}
+                      min="0"
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                      }}
+                    />
+                    {formData.duration && (
+                      <p style={{ marginTop: "6px", fontSize: "12px", color: "#6B7280" }}>
+                        Số buổi học tối thiểu: {parseInt(formData.duration, 10) * 2}, tối đa: {parseInt(formData.duration, 10) * 7}
+                      </p>
+                    )}
+                  </div>
 
-                   {/* Duration In Sessions */}
-                   <div>
-                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                       Số buổi học <span style={{ color: "#DC2626" }}>*</span>
-                     </label>
-                     <input
-                       type="number"
-                       placeholder="VD: 24"
-                       value={formData.durationInSessions}
-                       onChange={(e) => handleNumberInput(e, "durationInSessions")}
-                       min="0"
-                       style={{
-                         width: "100%",
-                         padding: "12px",
-                         border: "1px solid #E5E7EB",
-                         borderRadius: "8px",
-                         fontSize: "14px",
-                       }}
-                     />
-                     {formData.duration && formData.durationInSessions && (() => {
-                       const duration = parseInt(formData.duration, 10);
-                       const sessions = parseInt(formData.durationInSessions, 10);
-                       const minSessions = duration * 2;
-                       const maxSessions = duration * 7;
-                       const isValid = sessions >= minSessions && sessions <= maxSessions;
-                       return (
-                         <p style={{ 
-                           marginTop: "6px", 
-                           fontSize: "12px", 
-                           color: isValid ? "#10B981" : "#DC2626",
-                           fontWeight: isValid ? 400 : 600
-                         }}>
-                           {isValid ? "✓ Hợp lệ" : `✗ Phải từ ${minSessions} đến ${maxSessions}`}
-                         </p>
-                       );
-                     })()}
-                   </div>
-                 </div>
+                  {/* Duration In Sessions */}
+                  <div>
+                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                      Số buổi học <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="VD: 24"
+                      value={formData.durationInSessions}
+                      onChange={(e) => handleNumberInput(e, "durationInSessions")}
+                      min="0"
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                      }}
+                    />
+                    {formData.duration && formData.durationInSessions && (() => {
+                      const duration = parseInt(formData.duration, 10);
+                      const sessions = parseInt(formData.durationInSessions, 10);
+                      const minSessions = duration * 2;
+                      const maxSessions = duration * 7;
+                      const isValid = sessions >= minSessions && sessions <= maxSessions;
+                      return (
+                        <p style={{
+                          marginTop: "6px",
+                          fontSize: "12px",
+                          color: isValid ? "#10B981" : "#DC2626",
+                          fontWeight: isValid ? 400 : 600
+                        }}>
+                          {isValid ? "✓ Hợp lệ" : `✗ Phải từ ${minSessions} đến ${maxSessions}`}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                   {/* Level */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Cấp độ
+                      Cấp độ {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
                     <select
                       value={formData.level}
@@ -868,7 +878,7 @@ export default function CoursesPage() {
                   {/* Price */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Học phí (VNĐ)
+                      Học phí (VNĐ) {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
                     <input
                       type="number"
@@ -960,7 +970,7 @@ export default function CoursesPage() {
                 Xác nhận xóa
               </h3>
               <p style={{ color: "#6B7280", marginBottom: "20px", lineHeight: "1.6" }}>
-                Bạn có chắc chắn muốn xóa khóa học <strong>{courseToDelete?.courseName}</strong>? 
+                Bạn có chắc chắn muốn xóa khóa học <strong>{courseToDelete?.courseName}</strong>?
                 Hành động này không thể hoàn tác.
               </p>
 

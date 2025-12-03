@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentLayout from "../layout/StudentLayout";
-import { getClasses, createClass, updateClass, deleteClass, getCourses } from "../../api/academicApi";
+import { getClasses, createClass, updateClass, deleteClass, getCourses, getTeachers } from "../../api/academicApi";
 import { parseApiError } from "../../api/parseApiError";
 import './ClassesPage.css';
 import {
@@ -21,11 +21,13 @@ export default function ClassesPage() {
   const navigate = useNavigate();
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourseId, setFilterCourseId] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [selectedDays, setSelectedDays] = useState([]);
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,7 +42,7 @@ export default function ClassesPage() {
     className: "",
     teacherId: "",
     schedule: "",
-    status: "",
+    status: "UPCOMING",
     room: "",
     capacity: "",
     startDate: "",
@@ -65,7 +67,7 @@ export default function ClassesPage() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadClasses(), loadCourses()]);
+      await Promise.all([loadClasses(), loadCourses(), loadTeachers()]);
     } catch (err) {
       console.error("Error loading initial data:", err);
     } finally {
@@ -104,6 +106,63 @@ export default function ClassesPage() {
     }
   };
 
+  const loadTeachers = async () => {
+    try {
+      const response = await getTeachers();
+      let list = [];
+      if (Array.isArray(response)) list = response;
+      else if (Array.isArray(response?.data)) list = response.data;
+      else if (Array.isArray(response?.items)) list = response.items;
+      else if (Array.isArray(response?.data?.teachers)) list = response.data.teachers;
+      else list = [];
+      setTeachers(list);
+    } catch (err) {
+      console.error("Error loading teachers:", err);
+    }
+  };
+
+  const parseScheduleToDays = (scheduleStr) => {
+    if (!scheduleStr) return [];
+
+    const dayMap = {
+      'mon': 'Mon', 'monday': 'Mon', 't2': 'Mon',
+      'tue': 'Tue', 'tuesday': 'Tue', 't3': 'Tue',
+      'wed': 'Wed', 'wednesday': 'Wed', 't4': 'Wed',
+      'thu': 'Thu', 'thursday': 'Thu', 't5': 'Thu',
+      'fri': 'Fri', 'friday': 'Fri', 't6': 'Fri',
+      'sat': 'Sat', 'saturday': 'Sat', 't7': 'Sat',
+      'sun': 'Sun', 'sunday': 'Sun', 'cn': 'Sun'
+    };
+
+    const normalized = scheduleStr.toLowerCase().trim();
+    const tokens = normalized.split(/[,\-\s]+/).map(t => t.trim()).filter(t => t.length > 0);
+    const days = [];
+
+    tokens.forEach(token => {
+      if (dayMap[token] && !days.includes(dayMap[token])) {
+        days.push(dayMap[token]);
+      }
+    });
+
+    return days;
+  };
+
+  const formatDaysToSchedule = (daysArray) => {
+    if (!daysArray || daysArray.length === 0) return "";
+    return daysArray.join(", ");
+  };
+
+  // Danh sách các ngày trong tuần
+  const weekDays = [
+    { value: "Mon", label: "Thứ 2" },
+    { value: "Tue", label: "Thứ 3" },
+    { value: "Wed", label: "Thứ 4" },
+    { value: "Thu", label: "Thứ 5" },
+    { value: "Fri", label: "Thứ 6" },
+    { value: "Sat", label: "Thứ 7" },
+    { value: "Sun", label: "Chủ nhật" },
+  ];
+
   const handleFilterChange = (courseId) => {
     setFilterCourseId(courseId);
     loadClasses(courseId || null);
@@ -118,7 +177,7 @@ export default function ClassesPage() {
       className: "",
       teacherId: "",
       schedule: "",
-      status: "",
+      status: "UPCOMING",
       room: "",
       capacity: "",
       startDate: "",
@@ -126,6 +185,7 @@ export default function ClassesPage() {
       startTime: "",
       durationPerSession: "",
     });
+    setSelectedDays([]);
     setModalError(null);
     setModalOpen(true);
   };
@@ -133,6 +193,45 @@ export default function ClassesPage() {
   const openEditModal = (classItem) => {
     setModalMode("edit");
     setCurrentClass(classItem);
+
+    const convertDateFormat = (dateStr) => {
+      if (!dateStr) return "";
+
+      // Nếu đã là format yyyy-mm-dd, return luôn
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        return dateStr.split("T")[0]; // Lấy phần date nếu có time
+      }
+
+      // Nếu là format mm-dd-yyyy, convert sang yyyy-mm-dd
+      // Pattern: mm-dd-yyyy hoặc m-d-yyyy
+      const mmddyyyyPattern = /^(\d{1,2})-(\d{1,2})-(\d{4})/;
+      const match = String(dateStr).match(mmddyyyyPattern);
+
+      if (match) {
+        const month = match[1].padStart(2, "0");
+        const day = match[2].padStart(2, "0");
+        const year = match[3];
+        return `${year}-${month}-${day}`;
+      }
+
+      // Nếu không match pattern nào, thử parse như Date object
+      try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        }
+      } catch (e) {
+        // Ignore
+      }
+
+      return "";
+    };
+
+    const scheduleDays = parseScheduleToDays(classItem.schedule || "");
+
     setFormData({
       courseId: classItem.courseId || "",
       className: classItem.className || "",
@@ -140,14 +239,44 @@ export default function ClassesPage() {
       schedule: classItem.schedule || "",
       room: classItem.room || "",
       capacity: classItem.capacity || "",
-      startDate: classItem.startDate || "",
-      endDate: classItem.endDate || "",
-      status: classItem.status || "",
+      startDate: convertDateFormat(classItem.startDate), // Convert từ mm-dd-yyyy sang yyyy-mm-dd
+      endDate: convertDateFormat(classItem.endDate),     // Convert từ mm-dd-yyyy sang yyyy-mm-dd
+      status: classItem.status || "UPCOMING",
       startTime: classItem.startTime || "",
       durationPerSession: classItem.durationPerSession || "",
     });
+    setSelectedDays(scheduleDays);
     setModalError(null);
     setModalOpen(true);
+  };
+
+  // Handler khi user chọn/bỏ chọn ngày
+  const handleDayToggle = (dayValue) => {
+    setSelectedDays(prev => {
+      if (prev.includes(dayValue)) {
+        // Bỏ chọn
+        return prev.filter(d => d !== dayValue);
+      } else {
+        // Chọn thêm
+        return [...prev, dayValue].sort((a, b) => {
+          const order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+          return order.indexOf(a) - order.indexOf(b);
+        });
+      }
+    });
+
+    // Update schedule string trong formData
+    const newDays = selectedDays.includes(dayValue)
+      ? selectedDays.filter(d => d !== dayValue)
+      : [...selectedDays, dayValue].sort((a, b) => {
+        const order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        return order.indexOf(a) - order.indexOf(b);
+      });
+
+    setFormData(prev => ({
+      ...prev,
+      schedule: formatDaysToSchedule(newDays)
+    }));
   };
 
   const closeModal = () => {
@@ -167,57 +296,131 @@ export default function ClassesPage() {
   };
 
   const handleSubmit = async () => {
+    setModalError(null);
     // Validation
-    if (!formData.className) {
-      setModalError("Vui lòng nhập tên lớp học");
-      return;
-    }
+    if (modalMode === "create") {
+      if (!formData.courseId) {
+        setModalError("Vui lòng chọn khóa học");
+        return;
+      }
 
-    if (!formData.courseId) {
-      setModalError("Vui lòng chọn khóa học");
-      return;
-    }
+      if (!formData.className) {
+        setModalError("Vui lòng nhập tên lớp học");
+        return;
+      }
 
-    if (!formData.startTime) {
-      setModalError("Vui lòng nhập giờ bắt đầu");
-      return;
-    }
+      if (!formData.room) {
+        setModalError("Vui lòng nhập phòng học");
+        return;
+      }
 
-    const duration = parseInt(formData.durationPerSession, 10);
-    if (!formData.durationPerSession || isNaN(duration) || duration < 1) {
-      setModalError("Thời lượng buổi học phải >= 1 phút");
-      return;
-    }
+      if (!formData.capacity) {
+        setModalError("Vui lòng nhập sức chứa");
+        return;
+      }
 
-    const capacity = parseInt(formData.capacity, 10);
-    if (formData.capacity && (isNaN(capacity) || capacity < 1)) {
-      setModalError("Sức chứa phải >= 1");
-      return;
+      const capacity = parseInt(formData.capacity, 10);
+      if (isNaN(capacity) || capacity < 1) {
+        setModalError("Sức chứa phải >= 1");
+        return;
+      }
+
+      if (selectedDays.length === 0) {
+        setModalError("Vui lòng chọn ít nhất một ngày học");
+        return;
+      }
+
+      if (!formData.status || !["UPCOMING", "ACTIVE", "COMPLETED"].includes(formData.status)) {
+        setModalError("Vui lòng chọn trạng thái hợp lệ");
+        return;
+      }
+
+      if (!formData.startTime) {
+        setModalError("Vui lòng nhập giờ bắt đầu");
+        return;
+      }
+
+      const duration = parseInt(formData.durationPerSession, 10);
+      if (!formData.durationPerSession || isNaN(duration) || duration < 1) {
+        setModalError("Thời lượng buổi học phải >= 1 phút");
+        return;
+      }
+
+      if (!formData.startDate) {
+        setModalError("Vui lòng chọn ngày bắt đầu");
+        return;
+      }
+
+      if (!formData.endDate) {
+        setModalError("Vui lòng chọn ngày kết thúc");
+        return;
+      }
+
+      if (!formData.teacherId) {
+        setModalError("Vui lòng chọn giáo viên");
+        return;
+      }
+    } else {
+      if (formData.capacity) {
+        const capacity = parseInt(formData.capacity, 10);
+        if (isNaN(capacity) || capacity < 1) {
+          setModalError("Sức chứa phải >= 1");
+          return;
+        }
+      }
+
+      if (formData.durationPerSession) {
+        const duration = parseInt(formData.durationPerSession, 10);
+        if (isNaN(duration) || duration < 1) {
+          setModalError("Thời lượng buổi học phải >= 1 phút");
+          return;
+        }
+      }
+
+      if (formData.status && !["UPCOMING", "ACTIVE", "COMPLETED"].includes(formData.status)) {
+        setModalError("Vui lòng chọn trạng thái hợp lệ");
+        return;
+      }
     }
 
     setModalLoading(true);
     setModalError(null);
 
     try {
-      const { status, ...rest } = formData;
+      const scheduleString = formatDaysToSchedule(selectedDays);
+
       const payload = {
-        ...rest,
+        courseId: formData.courseId,
+        className: formData.className,
+        teacherId: formData.teacherId,
+        schedule: scheduleString,
+        room: formData.room,
         capacity: formData.capacity ? parseInt(formData.capacity, 10) : null,
-        durationPerSession: parseInt(formData.durationPerSession, 10),
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        startTime: formData.startTime,
+        durationPerSession: formData.durationPerSession ? parseInt(formData.durationPerSession, 10) : null,
+        status: formData.status,
       };
+
       if (modalMode === "create") {
         await createClass(payload);
       } else {
-        // For update, only send updateable fields
-        const updatePayload = {
-          className: payload.className,
-          schedule: payload.schedule,
-          room: payload.room,
-          capacity: payload.capacity,
-          status: payload.status,
-          startTime: payload.startTime,
-          durationPerSession: payload.durationPerSession,
-        };
+        // For update, only send updateable fields (exclude null/empty values)
+        const updatePayload = {};
+        if (payload.className) updatePayload.className = payload.className;
+        if (scheduleString) updatePayload.schedule = scheduleString;
+        if (payload.room) updatePayload.room = payload.room;
+        if (payload.capacity !== null && payload.capacity !== undefined) updatePayload.capacity = payload.capacity;
+        if (payload.status) updatePayload.status = payload.status;
+        if (payload.startTime) updatePayload.startTime = payload.startTime;
+        if (payload.durationPerSession !== null && payload.durationPerSession !== undefined) {
+          updatePayload.durationPerSession = payload.durationPerSession;
+        }
+        if (payload.startDate) updatePayload.startDate = payload.startDate;
+        if (payload.endDate) updatePayload.endDate = payload.endDate;
+        if (payload.teacherId) updatePayload.teacherId = payload.teacherId;
+
         await updateClass(currentClass.classId, updatePayload);
       }
 
@@ -292,11 +495,16 @@ export default function ClassesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCourseId]);
+  }, [searchTerm, filterCourseId, statusFilter]);
 
   const getCourseName = (courseId) => {
     const course = courses.find(c => c.courseId === courseId);
     return course?.courseName || courseId;
+  };
+
+  const getTeacherName = (teacherId) => {
+    const teacher = teachers.find(t => t.teacherId === teacherId || t.userId === teacherId);
+    return teacher?.name || teacher?.teacherName || teacherId;
   };
 
   const getStatusBadge = (status) => {
@@ -766,7 +974,7 @@ export default function ClassesPage() {
                 {/* Class Name */}
                 <div>
                   <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                    Tên lớp học <span style={{ color: "#DC2626" }}>*</span>
+                    Tên lớp học {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                   </label>
                   <input
                     type="text"
@@ -787,7 +995,7 @@ export default function ClassesPage() {
                   {/* Room */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Phòng học
+                      Phòng học {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
                     <input
                       type="text"
@@ -807,7 +1015,7 @@ export default function ClassesPage() {
                   {/* Capacity */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Sức chứa
+                      Sức chứa {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
                     <input
                       type="number"
@@ -829,92 +1037,148 @@ export default function ClassesPage() {
                 {/* Schedule */}
                 <div>
                   <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                    Lịch học
+                    Lịch học {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                   </label>
-                  <input
-                    type="text"
-                    placeholder="VD: Thứ 2, 4, 6"
-                    value={formData.schedule}
-                    onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                  />
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                    gap: "10px",
+                    padding: "12px",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    backgroundColor: "#fff",
+                  }}>
+                    {weekDays.map(day => (
+                      <label
+                        key={day.value}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          cursor: "pointer",
+                          padding: "8px",
+                          borderRadius: "6px",
+                          backgroundColor: selectedDays.includes(day.value) ? "#E0E7FF" : "transparent",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!selectedDays.includes(day.value)) {
+                            e.currentTarget.style.backgroundColor = "#F3F4F6";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selectedDays.includes(day.value)) {
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDays.includes(day.value)}
+                          onChange={() => handleDayToggle(day.value)}
+                          style={{
+                            width: "18px",
+                            height: "18px",
+                            cursor: "pointer",
+                            accentColor: "#05386D",
+                          }}
+                        />
+                        <span style={{
+                          fontSize: "14px",
+                          color: selectedDays.includes(day.value) ? "#05386D" : "#374151",
+                          fontWeight: selectedDays.includes(day.value) ? 600 : 400,
+                        }}>
+                          {day.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {selectedDays.length > 0 && (
+                    <div style={{
+                      marginTop: "8px",
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      fontStyle: "italic",
+                    }}>
+                      Đã chọn: {formatDaysToSchedule(selectedDays)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Status */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                    Trạng thái
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VD: Đang học"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                  {/* Start Time */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {/* Status Selection - both for create and edit mode */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Giờ bắt đầu <span style={{ color: "#DC2626" }}>*</span>
+                      Trạng thái {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
-                    <input
-                      type="time"
-                      value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       style={{
                         width: "100%",
                         padding: "12px",
                         border: "1px solid #E5E7EB",
                         borderRadius: "8px",
                         fontSize: "14px",
+                        backgroundColor: "#fff",
+                        cursor: "pointer",
                       }}
-                    />
+                    >
+                      <option value="UPCOMING">Sắp học</option>
+                      <option value="ACTIVE">Đang học</option>
+                      <option value="COMPLETED">Hoàn thành</option>
+                    </select>
                   </div>
 
-                  {/* Duration Per Session */}
-                  <div>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Thời lượng (phút) <span style={{ color: "#DC2626" }}>*</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="VD: 90"
-                      value={formData.durationPerSession}
-                      onChange={(e) => handleNumberInput(e, "durationPerSession")}
-                      min="0"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                      }}
-                    />
-                  </div>
-                </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                    {/* Start Time */}
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                        Giờ bắt đầu {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                      </label>
+                      <input
+                        type="time"
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                        }}
+                      />
+                    </div>
 
-                {/* Only show dates for create mode */}
-                {modalMode === "create" && (
+                    {/* Duration Per Session */}
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                        Thời lượng (phút) {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="VD: 90"
+                        value={formData.durationPerSession}
+                        onChange={(e) => handleNumberInput(e, "durationPerSession")}
+                        min="0"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Show dates for both create and edit mode */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                     {/* Start Date */}
                     <div>
                       <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                        Ngày bắt đầu
+                        Ngày bắt đầu {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                       </label>
                       <input
                         type="date"
@@ -933,7 +1197,7 @@ export default function ClassesPage() {
                     {/* End Date */}
                     <div>
                       <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                        Ngày kết thúc
+                        Ngày kết thúc {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                       </label>
                       <input
                         type="date"
@@ -949,17 +1213,13 @@ export default function ClassesPage() {
                       />
                     </div>
                   </div>
-                )}
 
-                {/* Teacher ID - optional */}
-                {modalMode === "create" && (
+                  {/* Teacher Selection - both for create and edit mode */}
                   <div>
                     <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Mã giáo viên
+                      Giáo viên {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
                     </label>
-                    <input
-                      type="text"
-                      placeholder="VD: TEACHER001"
+                    <select
                       value={formData.teacherId}
                       onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
                       style={{
@@ -968,47 +1228,59 @@ export default function ClassesPage() {
                         border: "1px solid #E5E7EB",
                         borderRadius: "8px",
                         fontSize: "14px",
+                        backgroundColor: "#fff",
+                        cursor: "pointer",
                       }}
-                    />
+                    >
+                      <option value="">Chọn giáo viên</option>
+                      {teachers.map(teacher => (
+                        <option
+                          key={teacher.teacherId || teacher.userId}
+                          value={teacher.teacherId || teacher.userId}
+                        >
+                          {teacher.name || teacher.teacherName || teacher.teacherCode || teacher.teacherId || teacher.userId}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Actions */}
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "30px" }}>
-                <button
-                  onClick={closeModal}
-                  disabled={modalLoading}
-                  style={{
-                    padding: "12px 24px",
-                    backgroundColor: "#F3F4F6",
-                    color: "#374151",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={modalLoading}
-                  style={{
-                    padding: "12px 24px",
-                    backgroundColor: "#05386D",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: modalLoading ? "not-allowed" : "pointer",
-                    opacity: modalLoading ? 0.6 : 1,
-                  }}
-                >
-                  {modalLoading ? "Đang lưu..." : modalMode === "create" ? "Tạo lớp học" : "Cập nhật"}
-                </button>
+                {/* Actions */}
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "30px" }}>
+                  <button
+                    onClick={closeModal}
+                    disabled={modalLoading}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "#F3F4F6",
+                      color: "#374151",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={modalLoading}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "#05386D",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: modalLoading ? "not-allowed" : "pointer",
+                      opacity: modalLoading ? 0.6 : 1,
+                    }}
+                  >
+                    {modalLoading ? "Đang lưu..." : modalMode === "create" ? "Tạo lớp học" : "Cập nhật"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

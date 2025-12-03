@@ -193,75 +193,15 @@ export const deleteClass = async (classId) => {
   return response.data;
 };
 
-// Get Class Session
-export async function getSessionsByClassId(classId) {
-  return api.get(`/academic/classes/${classId}/sessions`);
-}
-
-
 // ============================================================
-// Enrollments API (Student)
+// Teachers API
 // ============================================================
 
 /**
- * Get my enrollments
- * @param {string} studentId
+ * Get all teachers
+ * @returns {Promise} API response with teachers list
  */
-export const getMyEnrollments = async (studentId) => {
-  const response = await api.get(buildAcademicUrl('enrollments'), {
-    params: { studentId }
-  });
-  return response.data;
-};
-
-/**
- * Enroll in a class
- */
-export const enrollInClass = async (classId, studentId, enrollKey = null) => {
-  const body = { classId, studentId };
-  if (enrollKey) body.enrollKey = enrollKey;
-
-  const response = await api.post(buildAcademicUrl('enrollments'), body);
-  return response.data;
-};
-
-/**
- * Unenroll from class (DELETE with no JSON body fix)
- */
-export const unenrollFromClass = async (enrollmentId) => {
-  const url = buildAcademicUrl(`enrollments/${enrollmentId}`);
-
-  try {
-    const response = await api.delete(url);
-
-    // Backend có thể trả 204 → không JSON
-    if (!response.data) return { success: true };
-
-    return response.data;
-  } catch (e) {
-    throw new Error(e?.response?.data?.message || "Unenroll failed");
-  }
-};
-// ============================================================
-// Teacher API
-// ============================================================
-
-export const getTeacher = async (teacherId) => {
-  const response = await api.get(buildAcademicUrl(`teachers/${teacherId}`));
-  return response.data;
-};
-
-// ============================================================
-// Materials API
-// ============================================================
-
-export const getClassMaterials = async (courseId, classId) => {
-  const url = buildAcademicUrl(`courses/${courseId}/classes/${classId}/materials`);
-  const response = await api.get(url);
-  return response.data;
-};
-
-export const getMaterialDownloadUrl = async (materialId) => {
-  const response = await api.get(buildAcademicUrl(`materials/${materialId}/download-url`));
+export const getTeachers = async () => {
+  const response = await api.get(buildAcademicUrl('teachers'));
   return response.data;
 };
