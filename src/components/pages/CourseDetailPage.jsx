@@ -307,61 +307,6 @@ export default function CourseDetailPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Price */}
-                {course.price && (
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "8px",
-                          backgroundColor: "#FEE2E2",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#DC2626",
-                          fontSize: "20px",
-                        }}
-                      >
-                        <FaTag />
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "12px",
-                            color: "#9CA3AF",
-                            fontWeight: 600,
-                          }}
-                        >
-                          HỌC PHÍ
-                        </p>
-                        <p
-                          style={{
-                            margin: "4px 0 0 0",
-                            fontSize: "18px",
-                            fontWeight: 700,
-                            color: "#05386D",
-                          }}
-                        >
-                          {new Intl.NumberFormat("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          }).format(course.price)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Additional Info */}

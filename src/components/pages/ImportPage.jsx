@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { generateImportUploadUrl, uploadFileToS3, getImportJobStatus, listImportJobs } from '../../api/academic';
 import './ImportPage.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function ImportPage() {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'history'
-  
+  const navigate = useNavigate();
+
   // Upload tab state
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -12,7 +14,7 @@ export default function ImportPage() {
   const [uploadError, setUploadError] = useState(null);
   const [currentJobId, setCurrentJobId] = useState(null);
   const [jobStatus, setJobStatus] = useState(null);
-  
+
   // History tab state
   const [importJobs, setImportJobs] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -22,13 +24,13 @@ export default function ImportPage() {
   // Poll job status when uploading
   useEffect(() => {
     if (!currentJobId) return;
-    
+
     const pollInterval = setInterval(async () => {
       try {
         const response = await getImportJobStatus(currentJobId);
         if (response.success) {
           setJobStatus(response.data);
-          
+
           // Stop polling if job completed or failed
           const finalStatuses = ['SUCCESS', 'FAILED', 'COMPLETED'];
           if (finalStatuses.includes(response.data.status)) {
@@ -54,19 +56,19 @@ export default function ImportPage() {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     // Validate file type
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       setUploadError('Please select an Excel file (.xlsx or .xls)');
       return;
     }
-    
+
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('File size must be less than 10MB');
       return;
     }
-    
+
     setSelectedFile(file);
     setUploadError(null);
     setJobStatus(null);
@@ -157,17 +159,38 @@ export default function ImportPage() {
   return (
     <div className="import-page">
       <h1>Import Academic Data</h1>
+
+      <button
+        style={{
+          marginBottom: '12px',
+          padding: '8px 14px',
+          borderRadius: '6px',
+          border: '1px solid #000',
+          backgroundColor: '#e31818ff',
+          color: '#fff',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '14px',
+          fontWeight: 500,
+        }}
+        onClick={() => navigate('/dashboard')}
+      >
+        <span>Return to Dashboard</span>
+      </button>
+
       <p className="subtitle">Upload Excel files to import students, teachers, courses, and classes</p>
 
       {/* Tabs */}
       <div className="tabs">
-        <button 
+        <button
           className={activeTab === 'upload' ? 'active' : ''}
           onClick={() => setActiveTab('upload')}
         >
           Upload File
         </button>
-        <button 
+        <button
           className={activeTab === 'history' ? 'active' : ''}
           onClick={() => setActiveTab('history')}
         >
@@ -180,7 +203,7 @@ export default function ImportPage() {
         <div className="upload-section">
           <div className="upload-card">
             <h2>Upload Excel File</h2>
-            
+
             <div className="file-requirements">
               <h3>Requirements:</h3>
               <ul>
@@ -189,7 +212,7 @@ export default function ImportPage() {
                 <li>Must contain 5 sheets: Students, Teachers, Courses, Classes, Enrollments</li>
                 <li>See <a href="/import-template.xlsx" download>template file</a> for structure</li>
               </ul>
-              
+
               <h3>Import Behavior:</h3>
               <ul>
                 <li><strong>Idempotent:</strong> Importing the same file multiple times is safe</li>
@@ -203,8 +226,8 @@ export default function ImportPage() {
             {!uploading && !jobStatus && (
               <>
                 <div className="file-input-wrapper">
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     id="file-input"
                     accept=".xlsx,.xls"
                     onChange={handleFileSelect}
@@ -227,7 +250,7 @@ export default function ImportPage() {
                 )}
 
                 <div className="button-group">
-                  <button 
+                  <button
                     className="btn-primary"
                     onClick={handleUpload}
                     disabled={!selectedFile || uploading}
@@ -235,7 +258,7 @@ export default function ImportPage() {
                     Upload & Import
                   </button>
                   {selectedFile && (
-                    <button 
+                    <button
                       className="btn-secondary"
                       onClick={() => setSelectedFile(null)}
                     >
@@ -260,7 +283,7 @@ export default function ImportPage() {
                   <p><strong>Job ID:</strong> {jobStatus.jobId}</p>
                   <p><strong>File:</strong> {jobStatus.fileName}</p>
                   <p><strong>Status:</strong> <span className="status-badge">{jobStatus.status}</span></p>
-                  
+
                   {jobStatus.status === 'PROCESSING' && (
                     <div className="processing-indicator">
                       <div className="spinner-small"></div>
@@ -309,8 +332,8 @@ export default function ImportPage() {
                     <button className="btn-primary" onClick={resetUpload}>
                       Upload Another File
                     </button>
-                    <button 
-                      className="btn-secondary" 
+                    <button
+                      className="btn-secondary"
                       onClick={() => setActiveTab('history')}
                     >
                       View History
@@ -328,7 +351,7 @@ export default function ImportPage() {
         <div className="history-section">
           <div className="history-header">
             <h2>Import History</h2>
-            <button 
+            <button
               className="btn-secondary"
               onClick={loadImportHistory}
               disabled={loadingHistory}
@@ -364,14 +387,14 @@ export default function ImportPage() {
                     </p>
                     {job.summary && (
                       <p className="job-summary">
-                        {job.summary.studentsImported || 0} students, 
-                        {job.summary.teachersImported || 0} teachers, 
-                        {job.summary.coursesImported || 0} courses, 
+                        {job.summary.studentsImported || 0} students,
+                        {job.summary.teachersImported || 0} teachers,
+                        {job.summary.coursesImported || 0} courses,
                         {job.summary.classesImported || 0} classes
                       </p>
                     )}
                   </div>
-                  <button 
+                  <button
                     className="btn-link"
                     onClick={() => viewJobDetails(job.jobId)}
                   >

@@ -170,11 +170,6 @@ export default function CoursesPage() {
       return;
     }
 
-    if (!formData.price) {
-      setModalError("Vui lòng nhập học phí");
-      return;
-    }
-
     // Validate relationship: durationInSessions must be >= duration * 2 and <= duration * 7
     const minSessions = duration * 2;
     const maxSessions = duration * 7;
@@ -517,15 +512,6 @@ export default function CoursesPage() {
                         )}
                       </div>
 
-                      {course.price && (
-                        <div style={{ fontSize: "20px", fontWeight: 700, color: "#05386D", marginBottom: "15px" }}>
-                          {new Intl.NumberFormat("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          }).format(course.price)}
-                        </div>
-                      )}
-
                       {/* Actions */}
                       <div style={{ display: "flex", gap: "10px", paddingTop: "15px", borderTop: "1px solid #F3F4F6" }}>
                         <button
@@ -850,51 +836,28 @@ export default function CoursesPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                  {/* Level */}
-                  <div>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Cấp độ {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
-                    </label>
-                    <select
-                      value={formData.level}
-                      onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        backgroundColor: "#fff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option value="BEGINNER">Cơ bản</option>
-                      <option value="INTERMEDIATE">Trung cấp</option>
-                      <option value="ADVANCED">Nâng cao</option>
-                    </select>
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Học phí (VNĐ) {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="VD: 5000000"
-                      value={formData.price}
-                      onChange={handlePriceInput}
-                      min="0"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                      }}
-                    />
-                  </div>
+                {/* Level */}
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                    Cấp độ {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                  </label>
+                  <select
+                    value={formData.level}
+                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      backgroundColor: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="BEGINNER">Cơ bản</option>
+                    <option value="INTERMEDIATE">Trung cấp</option>
+                    <option value="ADVANCED">Nâng cao</option>
+                  </select>
                 </div>
               </div>
 
@@ -1013,6 +976,6 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </StudentLayout >
   );
 }
