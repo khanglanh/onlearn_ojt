@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import StudentLayout from "../layout/StudentLayout";
+import AdminLayout from "../layout/AdminLayout";
 
 export default function SessionsPage() {
   return (
-    <StudentLayout>
+    <AdminLayout>
       <div style={{ padding: "20px" }}>
         <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#05386D", marginBottom: "20px" }}>
           Quản lý Buổi học
@@ -20,6 +20,6 @@ export default function SessionsPage() {
           </p>
         </div>
       </div>
-    </StudentLayout>
+    </AdminLayout>
   );
 }

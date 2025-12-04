@@ -73,7 +73,7 @@ const TeacherMaterialsPage = () => {
       setFolderName('');
       loadMaterials();
     } catch (err) {
-      setFolderError(err.response?.data?.error || 'Failed to create folder');
+      setFolderError(err.message || 'Failed to create folder');
     }
   };
 

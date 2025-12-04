@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../../utils/authUtils';
-import StudentLayout from "../layout/StudentLayout";
+import AdminLayout from "../layout/AdminLayout";
 import './DashboardPage.css';
 
 export default function DashboardPage() {
@@ -32,17 +32,17 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <StudentLayout>
+      <AdminLayout>
         <div className="admin-dashboard loading-state">
           <div className="spinner"></div>
           <p>Loading dashboard...</p>
         </div>
-      </StudentLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <StudentLayout>
+    <AdminLayout>
       <div className="admin-dashboard">
         {/* Header */}
         <div className="dashboard-header">
@@ -182,6 +182,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </StudentLayout>
+    </AdminLayout>
   );
 }

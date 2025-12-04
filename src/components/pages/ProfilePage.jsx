@@ -5,8 +5,11 @@ import parseApiError from '../../api/parseApiError.js';
 import mapError from '../../api/errorMap.js';
 import Message from '../Message';
 import { logout, isTokenExpired } from '../../api/auth.js';
+import { getUserRole } from '../../utils/authUtils';
 import '../AuthShared.css';
 import StudentLayout from '../layout/StudentLayout';
+import AdminLayout from '../layout/AdminLayout';
+import TeacherLayout from '../layout/TeacherLayout';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -102,18 +105,25 @@ export default function ProfilePage() {
     }
   };
 
+  const userRole = getUserRole();
+  const Layout = userRole === 'ADMIN' || userRole === 'MANAGER' 
+    ? AdminLayout 
+    : userRole === 'TEACHER' 
+    ? TeacherLayout 
+    : StudentLayout;
+
   if (fetchLoading) {
     return (
-      <StudentLayout>
+      <Layout>
         <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f9ff' }}>
           <div>Loading...</div>
         </div>
-      </StudentLayout>
+      </Layout>
     );
   }
 
   return (
-    <StudentLayout>
+    <Layout>
       <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f9ff' }}>
         <div className="login-box" style={{ maxWidth: 900, width: '100%', padding: '16px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -202,6 +212,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </StudentLayout>
+    </Layout>
   );
 }

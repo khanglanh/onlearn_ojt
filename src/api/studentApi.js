@@ -1,31 +1,70 @@
-import { api } from './client.js';
+import { getSession, refreshTokens, isTokenExpired } from './auth';
 
-const STUDENT_API_BASE_URL = (import.meta.env.VITE_ACADEMIC_API_BASE_URL || "").trim();
+const API_BASE_URL = import.meta.env.VITE_ACADEMIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  console.error('[Student API] API_BASE_URL is not configured. Please set VITE_ACADEMIC_API_BASE_URL or VITE_API_BASE_URL in your .env file');
+}
+
+async function getAuthHeaders() {
+  let session = getSession();
+  
+  // Prefer id_token (JWT containing user identity claims) for API Gateway
+  let tokenToUse = session.id_token && session.id_token.trim() !== '' ? session.id_token : session.access_token;
+  
+  // Check if token is expired
+  if (isTokenExpired(tokenToUse)) {
+    console.log('[Student API] Token expired, refreshing...');
+    try {
+      session = await refreshTokens();
+      tokenToUse = session.id_token && session.id_token.trim() !== '' ? session.id_token : session.access_token;
+      console.log('[Student API] Token refreshed successfully');
+    } catch (error) {
+      console.error('[Student API] Token refresh failed:', error);
+      throw error;
+    }
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${tokenToUse}`
+  };
+}
+
+// Helper function to handle fetch with better error handling
+async function fetchWithErrorHandling(url, options = {}) {
+  if (!API_BASE_URL) {
+    throw new Error('API base URL is not configured. Please check your environment variables.');
+  }
+
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      let error;
+      try {
+        error = await response.json();
+      } catch (e) {
+        error = { error: `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection and API configuration.');
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
 
 function buildStudentUrl(path) {
   // path: e.g. 'students' or 'students/123' or '/students/123'
   const trimmedPath = String(path).replace(/^\//, "");
-
-  if (!STUDENT_API_BASE_URL) {
-    // No specific student API base configured — attempt to use VITE_API_BASE_URL
-    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim();
-    if (!API_BASE_URL) {
-      console.error(
-        '[studentApi] VITE_ACADEMIC_API_BASE_URL and VITE_API_BASE_URL are both missing. Please set VITE_ACADEMIC_API_BASE_URL or VITE_API_BASE_URL in your .env'
-      );
-      throw new Error(
-        'Student API base URL is not configured. Set VITE_ACADEMIC_API_BASE_URL (preferred) or VITE_API_BASE_URL in your environment.'
-      );
-    }
-
-    console.warn('[studentApi] VITE_ACADEMIC_API_BASE_URL is not set — building absolute URL using VITE_API_BASE_URL');
-    // Make sure there's exactly one slash between base and path
-    const base = API_BASE_URL.replace(/\/$/, '');
-    return `${base}/academic/${trimmedPath}`;
-  }
-
-  // If configured as a full URL or a path fragment, normalize and combine
-  const base = STUDENT_API_BASE_URL.replace(/\/$/, '');
+  const base = API_BASE_URL.replace(/\/$/, '');
   return `${base}/academic/${trimmedPath}`;
 }
 
@@ -35,10 +74,23 @@ function buildStudentUrl(path) {
  * @returns {Promise} API response with student list
  */
 export const getStudents = async (params = {}) => {
-  const response = await api.get(buildStudentUrl('students'), {
-    params,
+  const headers = await getAuthHeaders();
+  const queryParams = new URLSearchParams();
+  
+  if (params.name) queryParams.append('name', params.name);
+  if (params.phone) queryParams.append('phone', params.phone);
+  if (params.email) queryParams.append('email', params.email);
+  if (params.status) queryParams.append('status', params.status);
+  
+  const queryString = queryParams.toString();
+  const url = queryString 
+    ? `${buildStudentUrl('students')}?${queryString}`
+    : buildStudentUrl('students');
+  
+  return await fetchWithErrorHandling(url, {
+    method: 'GET',
+    headers
   });
-  return response.data;
 };
 
 /**
@@ -47,8 +99,11 @@ export const getStudents = async (params = {}) => {
  * @returns {Promise} API response with student details
  */
 export const getStudent = async (studentId) => {
-  const response = await api.get(buildStudentUrl(`students/${studentId}`));
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}`), {
+    method: 'GET',
+    headers
+  });
 };
 
 /**
@@ -57,8 +112,12 @@ export const getStudent = async (studentId) => {
  * @returns {Promise} API response with search results
  */
 export const searchStudents = async (searchCriteria) => {
-  const response = await api.post(buildStudentUrl('students/search'), searchCriteria);
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl('students/search'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(searchCriteria)
+  });
 };
 
 /**
@@ -67,8 +126,12 @@ export const searchStudents = async (searchCriteria) => {
  * @returns {Promise} API response with created student
  */
 export const createStudent = async (studentData) => {
-  const response = await api.post(buildStudentUrl('students'), studentData);
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl('students'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(studentData)
+  });
 };
 
 /**
@@ -78,8 +141,12 @@ export const createStudent = async (studentData) => {
  * @returns {Promise} API response with updated student
  */
 export const updateStudent = async (studentId, studentData) => {
-  const response = await api.put(buildStudentUrl(`students/${studentId}`), studentData);
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}`), {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(studentData)
+  });
 };
 
 /**
@@ -88,8 +155,40 @@ export const updateStudent = async (studentId, studentData) => {
  * @returns {Promise} API response
  */
 export const deleteStudent = async (studentId) => {
-  const response = await api.delete(buildStudentUrl(`students/${studentId}`));
-  return response.data;
+  const headers = await getAuthHeaders();
+  try {
+    const response = await fetch(buildStudentUrl(`students/${studentId}`), {
+      method: 'DELETE',
+      headers
+    });
+
+    if (!response.ok) {
+      let error;
+      try {
+        error = await response.json();
+      } catch (e) {
+        error = { error: `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw new Error(error.error || error.message || 'Delete failed');
+    }
+
+    // 204 No Content has no body
+    if (response.status === 204) {
+      return { success: true };
+    }
+
+    const text = await response.text();
+    if (text) {
+      return JSON.parse(text);
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection and API configuration.');
+    }
+    throw error;
+  }
 };
 
 /**
@@ -99,8 +198,12 @@ export const deleteStudent = async (studentId) => {
  * @returns {Promise} API response
  */
 export const updateStudentStatus = async (studentId, statusData) => {
-  const response = await api.put(buildStudentUrl(`students/${studentId}/status`), statusData);
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}/status`), {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(statusData)
+  });
 };
 
 /**
@@ -109,8 +212,11 @@ export const updateStudentStatus = async (studentId, statusData) => {
  * @returns {Promise} API response with status history
  */
 export const getStatusHistory = async (studentId) => {
-  const response = await api.get(buildStudentUrl(`students/${studentId}/status/history`));
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}/status/history`), {
+    method: 'GET',
+    headers
+  });
 };
 
 /**
@@ -120,8 +226,12 @@ export const getStatusHistory = async (studentId) => {
  * @returns {Promise} API response
  */
 export const addNote = async (studentId, noteData) => {
-  const response = await api.post(buildStudentUrl(`students/${studentId}/notes`), noteData);
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}/notes`), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(noteData)
+  });
 };
 
 /**
@@ -130,8 +240,11 @@ export const addNote = async (studentId, noteData) => {
  * @returns {Promise} API response with notes
  */
 export const getNotes = async (studentId) => {
-  const response = await api.get(buildStudentUrl(`students/${studentId}/notes`));
-  return response.data;
+  const headers = await getAuthHeaders();
+  return await fetchWithErrorHandling(buildStudentUrl(`students/${studentId}/notes`), {
+    method: 'GET',
+    headers
+  });
 };
 
 /**
@@ -139,8 +252,14 @@ export const getNotes = async (studentId) => {
  * Uses the BFF aggregator pattern to fetch all data in one API call
  * @param {string} studentId - Student ID
  * @returns {Promise} API response with { studentInfo, academicInfo }
+ * Note: This endpoint returns academic summary (enrollments, grades, attendance)
+ * Student info should be fetched separately using getStudent()
  */
 export const getStudentDashboard = async (studentId) => {
-  const response = await api.get(buildStudentUrl(`dashboard/${studentId}`));
-  return response.data;
+  const headers = await getAuthHeaders();
+  // Use the correct endpoint: /academic/summary/{studentId}
+  return await fetchWithErrorHandling(buildStudentUrl(`summary/${studentId}`), {
+    method: 'GET',
+    headers
+  });
 };

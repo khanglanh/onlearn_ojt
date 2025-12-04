@@ -3,29 +3,22 @@ import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaHome,
-  FaCalendarAlt,
-  FaBook,
-  FaClipboardList,
-  FaCheckSquare,
-  FaFileAlt,
-  FaMoneyBill,
-  FaUser,
-  FaComments,
   FaUsers,
-  FaGraduationCap,
   FaChalkboardTeacher,
-  FaUserClock,
+  FaBook,
+  FaSchool,
+  FaCalendarAlt,
   FaClipboard,
-  FaChartLine,
-  FaBookOpen,
-  FaDoorOpen,
-  FaUserCheck,
+  FaCheckSquare,
   FaTrophy,
-  FaUserTie,
+  FaFileImport,
+  FaUser,
+  FaUserCheck,
+  FaChartLine,
 } from "react-icons/fa";
-import logo from "../../assets/logo.png"; // đổi theo đường dẫn thật
+import logo from "../../assets/logo.png";
 
-export default function StudentSidebar() {
+export default function AdminSidebar() {
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
@@ -73,14 +66,14 @@ export default function StudentSidebar() {
         }}
       >
         <MenuItem
-          active={isActive("/student/dashboard")}
+          active={isActive("/admin/dashboard")}
           icon={<FaHome />}
-          component={<Link to="/student/dashboard" />}
+          component={<Link to="/admin/dashboard" />}
         >
           Trang chủ
         </MenuItem>
 
-        {/* GROUP: HỌC TẬP */}
+        {/* GROUP: QUẢN LÝ NGƯỜI DÙNG */}
         <div
           style={{
             marginTop: "20px",
@@ -91,47 +84,91 @@ export default function StudentSidebar() {
             fontWeight: 600,
           }}
         >
-          Học tập
+          Quản lý người dùng
         </div>
 
         <MenuItem
-          active={isActive("/student/courses")}
-          icon={<FaBookOpen />}
-          component={<Link to="/student/courses" />}
+          active={isActive("/students")}
+          icon={<FaUsers />}
+          component={<Link to="/students" />}
         >
-          Khóa học của tôi
+          Quản lý học viên
         </MenuItem>
 
         <MenuItem
-          active={isActive("/schedule")}
-          icon={<FaCalendarAlt />}
-          component={<Link to="/schedule" />}
+          active={isActive("/teachers")}
+          icon={<FaChalkboardTeacher />}
+          component={<Link to="/teachers" />}
         >
-          Lịch học
+          Quản lý giáo viên
         </MenuItem>
 
+        {/* GROUP: QUẢN LÝ HỌC TẬP */}
+        <div
+          style={{
+            marginTop: "20px",
+            marginBottom: "8px",
+            fontSize: "13px",
+            color: "#888",
+            paddingLeft: "5px",
+            fontWeight: 600,
+          }}
+        >
+          Quản lý học tập
+        </div>
+
         <MenuItem
-          active={isActive("/student/materials")}
+          active={isActive("/courses")}
           icon={<FaBook />}
-          component={<Link to="/student/materials" />}
+          component={<Link to="/courses" />}
         >
-          Tài liệu học tập
+          Quản lý khóa học
         </MenuItem>
 
         <MenuItem
-          active={isActive("/homework")}
-          icon={<FaClipboardList />}
-          component={<Link to="/homework" />}
+          active={isActive("/classes")}
+          icon={<FaSchool />}
+          component={<Link to="/classes" />}
         >
-          Bài tập về nhà
+          Quản lý lớp học
         </MenuItem>
 
         <MenuItem
-          active={isActive("/exam")}
+          active={isActive("/sessions")}
+          icon={<FaCalendarAlt />}
+          component={<Link to="/sessions" />}
+        >
+          Quản lý buổi học
+        </MenuItem>
+
+        <MenuItem
+          active={isActive("/enrollments")}
+          icon={<FaClipboard />}
+          component={<Link to="/enrollments" />}
+        >
+          Quản lý đăng ký
+        </MenuItem>
+
+        {/* GROUP: ĐIỂM DANH & ĐIỂM SỐ */}
+        <div
+          style={{
+            marginTop: "20px",
+            marginBottom: "8px",
+            fontSize: "13px",
+            color: "#888",
+            paddingLeft: "5px",
+            fontWeight: 600,
+          }}
+        >
+          Điểm danh & Điểm số
+        </div>
+
+        <MenuItem
+          active={isActive("/attendance")}
           icon={<FaCheckSquare />}
-          component={<Link to="/exam" />}
+          component={<Link to="/attendance" />}
         >
-          Kiểm tra
+          Điểm danh
         </MenuItem>
 
         <MenuItem
@@ -142,7 +179,7 @@ export default function StudentSidebar() {
           Điểm số
         </MenuItem>
 
-        {/* GROUP: ĐĂNG KÝ */}
+        {/* GROUP: HỆ THỐNG */}
         <div
           style={{
             marginTop: "20px",
@@ -153,15 +190,23 @@ export default function StudentSidebar() {
             fontWeight: 600,
           }}
         >
-          Đăng ký
+          Hệ thống
         </div>
 
         <MenuItem
-          active={isActive("/enrollments")}
-          icon={<FaClipboard />}
-          component={<Link to="/enrollments" />}
+          active={isActive("/admin/import")}
+          icon={<FaFileImport />}
+          component={<Link to="/admin/import" />}
         >
-          Đăng ký lớp học
+          Nhập dữ liệu
+        </MenuItem>
+
+        <MenuItem
+          active={isActive("/schedule")}
+          icon={<FaChartLine />}
+          component={<Link to="/schedule" />}
+        >
+          Lịch tổng quan
         </MenuItem>
 
         {/* GROUP: TÀI KHOẢN */}
@@ -197,3 +242,4 @@ export default function StudentSidebar() {
     </Sidebar>
   );
 }
+
