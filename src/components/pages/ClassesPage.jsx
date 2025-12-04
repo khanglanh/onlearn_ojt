@@ -15,6 +15,7 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
+  FaKey,
 } from "react-icons/fa";
 
 export default function ClassesPage() {
@@ -49,6 +50,7 @@ export default function ClassesPage() {
     endDate: "",
     startTime: "",
     durationPerSession: "",
+    enrollKey: "",
   });
 
   // Delete confirmation
@@ -184,6 +186,7 @@ export default function ClassesPage() {
       endDate: "",
       startTime: "",
       durationPerSession: "",
+      enrollKey: ""
     });
     setSelectedDays([]);
     setModalError(null);
@@ -244,6 +247,7 @@ export default function ClassesPage() {
       status: classItem.status || "UPCOMING",
       startTime: classItem.startTime || "",
       durationPerSession: classItem.durationPerSession || "",
+      enrollKey: classItem.enrollKey
     });
     setSelectedDays(scheduleDays);
     setModalError(null);
@@ -360,6 +364,11 @@ export default function ClassesPage() {
         setModalError("Vui lòng chọn giáo viên");
         return;
       }
+
+      if (!formData.enrollKey) {
+        setModalError("Vui lòng nhập enrollkey");
+        return;
+      }
     } else {
       if (formData.capacity) {
         const capacity = parseInt(formData.capacity, 10);
@@ -401,6 +410,7 @@ export default function ClassesPage() {
         startTime: formData.startTime,
         durationPerSession: formData.durationPerSession ? parseInt(formData.durationPerSession, 10) : null,
         status: formData.status,
+        enrollKey: formData.enrollKey,
       };
 
       if (modalMode === "create") {
@@ -420,6 +430,7 @@ export default function ClassesPage() {
         if (payload.startDate) updatePayload.startDate = payload.startDate;
         if (payload.endDate) updatePayload.endDate = payload.endDate;
         if (payload.teacherId) updatePayload.teacherId = payload.teacherId;
+        if (payload.enrollKey) updatePayload.enrollKey = payload.enrollKey;
 
         await updateClass(currentClass.classId, updatePayload);
       }
@@ -749,6 +760,12 @@ export default function ClassesPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#6B7280", fontSize: "14px" }}>
                             <FaClock />
                             <span>{classItem.startTime} ({classItem.durationPerSession} phút)</span>
+                          </div>
+                        )}
+                        {classItem.enrollKey && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#6B7280", fontSize: "14px" }}>
+                            <FaKey />
+                            <span>{classItem.enrollKey}</span>
                           </div>
                         )}
                       </div>
@@ -1214,34 +1231,56 @@ export default function ClassesPage() {
                     </div>
                   </div>
 
-                  {/* Teacher Selection - both for create and edit mode */}
-                  <div>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
-                      Giáo viên {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
-                    </label>
-                    <select
-                      value={formData.teacherId}
-                      onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "1px solid #E5E7EB",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        backgroundColor: "#fff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option value="">Chọn giáo viên</option>
-                      {teachers.map(teacher => (
-                        <option
-                          key={teacher.teacherId || teacher.userId}
-                          value={teacher.teacherId || teacher.userId}
-                        >
-                          {teacher.name || teacher.teacherName || teacher.teacherCode || teacher.teacherId || teacher.userId}
-                        </option>
-                      ))}
-                    </select>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                    {/* Teacher Selection - both for create and edit mode */}
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                        Giáo viên {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                      </label>
+                      <select
+                        value={formData.teacherId}
+                        onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          backgroundColor: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="">Chọn giáo viên</option>
+                        {teachers.map(teacher => (
+                          <option
+                            key={teacher.teacherId || teacher.userId}
+                            value={teacher.teacherId || teacher.userId}
+                          >
+                            {teacher.name || teacher.teacherName || teacher.teacherCode || teacher.teacherId || teacher.userId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* EnrollKey */}
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}>
+                        EnrollKey {modalMode === "create" && <span style={{ color: "#DC2626" }}>*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="VD: ENROLL2024CS101"
+                        value={formData.enrollKey}
+                        onChange={(e) => setFormData({ ...formData, enrollKey: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 

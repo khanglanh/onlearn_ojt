@@ -10,6 +10,7 @@ import {
     FaCalendarAlt,
     FaHourglass,
     FaChalkboard,
+    FaKey,
 } from "react-icons/fa";
 
 export default function ClassDetailPage() {
@@ -476,7 +477,57 @@ export default function ClassDetailPage() {
                                     </div>
                                 )}
 
-
+                                {/* EnrollKey */}
+                                {clazz.enrollKey && (
+                                    <div>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "12px",
+                                                marginBottom: "12px",
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: "40px",
+                                                    height: "40px",
+                                                    borderRadius: "8px",
+                                                    backgroundColor: "#D1FAE5",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    color: "#10B981",
+                                                    fontSize: "20px",
+                                                }}
+                                            >
+                                                <FaKey />
+                                            </div>
+                                            <div>
+                                                <p
+                                                    style={{
+                                                        margin: "0",
+                                                        fontSize: "12px",
+                                                        color: "#9CA3AF",
+                                                        fontWeight: 600,
+                                                    }}
+                                                >
+                                                    ENROLLKEY
+                                                </p>
+                                                <p
+                                                    style={{
+                                                        margin: "4px 0 0 0",
+                                                        fontSize: "18px",
+                                                        fontWeight: 700,
+                                                        color: "#05386D",
+                                                    }}
+                                                >
+                                                    {clazz.enrollKey}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Additional Info */}
